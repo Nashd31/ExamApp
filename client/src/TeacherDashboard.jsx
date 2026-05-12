@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllExams, updateExam } from './api/examService';
+import { getAllExams, createExam, updateExam, deleteExam } from './api/examService';
 
 const TeacherDashboard = () => {
   const [exams, setExams] = useState([]);
@@ -80,16 +80,51 @@ const TeacherDashboard = () => {
     setEditingExam({ ...editingExam, questions: updatedQuestions });
   };
 
+  const handleCreateClick = () => {
+    setEditingExam({
+      title: 'New Exam',
+      questions: [
+        {
+          id: `q${Date.now()}`,
+          text: 'New Question',
+          options: ['Option 1', 'Option 2'],
+          answer: 0
+        }
+      ],
+      isNew: true
+    });
+  };
+
+  const handleDeleteClick = async (examId) => {
+    const confirmed = window.confirm('Are you sure you want to delete this exam?');
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteExam(examId);
+      setExams(exams.filter(exam => exam.id !== examId));
+    } catch (error) {
+      alert('Failed to delete exam: ' + error.message);
+    }
+  };
+
   const handleSave = async () => {
     try {
-      const updatedExam = await updateExam(editingExam);
+      let savedExam;
+      if (editingExam.isNew || !editingExam.id) {
+        const { isNew, ...newExamData } = editingExam;
+        savedExam = await createExam(newExamData);
+        setExams([...exams, savedExam]);
+      } else {
+        savedExam = await updateExam(editingExam);
+        setExams(exams.map(exam =>
+          exam.id === savedExam.id ? savedExam : exam
+        ));
+      }
 
-      const updatedExams = exams.map(exam =>
-        exam.id === updatedExam.id ? updatedExam : exam
-      );
-      setExams(updatedExams);
       setEditingExam(null);
-      console.log('Exam updated successfully in mockDb:', updatedExam);
+      console.log('Exam saved successfully in mockDb:', savedExam);
     } catch (error) {
       alert("Failed to save: " + error.message);
     }
@@ -100,7 +135,7 @@ const TeacherDashboard = () => {
       <div className="container mt-4 mb-5">
         <div className="card shadow">
           <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h3>Editing Exam: {editingExam.title}</h3>
+            <h3>{editingExam.isNew ? 'Creating New Exam:' : 'Editing Exam:'} {editingExam.title}</h3>
             <button className="btn btn-light btn-sm" onClick={() => setEditingExam(null)}>Back to List</button>
           </div>
           <div className="card-body">
@@ -165,7 +200,9 @@ const TeacherDashboard = () => {
 
             <div className="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
               <button className="btn btn-outline-primary me-md-2" onClick={handleAddQuestion}>Add New Question</button>
-              <button className="btn btn-success px-5" onClick={handleSave}>Save Changes</button>
+              <button className="btn btn-success px-5" onClick={handleSave}>
+                {editingExam?.isNew ? 'Create Exam' : 'Save Changes'}
+              </button>
               <button className="btn btn-secondary px-4" onClick={() => setEditingExam(null)}>Cancel</button>
             </div>
           </div>
@@ -200,13 +237,26 @@ const TeacherDashboard = () => {
                     <h6 className="mb-1">{exam.title}</h6>
                     <small className="text-muted">ID: {exam.id} | {exam.questions.length} Questions</small>
                   </div>
-                  <button className="btn btn-sm btn-outline-primary px-4" onClick={() => handleEditClick(exam)}>Edit</button>
+                  <div className="d-flex gap-2">
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => handleEditClick(exam)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => handleDeleteClick(exam.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
           <div className="mt-4">
-            <button className="btn btn-success">Create New Exam</button>
+            <button className="btn btn-success" onClick={handleCreateClick}>Create New Exam</button>
           </div>
         </div>
       </div>

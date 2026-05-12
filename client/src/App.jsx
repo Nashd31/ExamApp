@@ -10,17 +10,17 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <nav className="navbar navbar-dark bg-dark mb-4">
-        <div className="container">
+    <div className="d-flex flex-column min-vh-100">
+      <header className="navbar navbar-dark bg-dark">
+        <div className="container py-3">
           <span className="navbar-brand mb-0 h1">E-Test System</span>
           <button className="btn btn-outline-light" onClick={toggleRole}>
             Switch to {role === 'teacher' ? 'Student' : 'Teacher'} View
           </button>
         </div>
-      </nav>
+      </header>
 
-      <main>
+      <main className="flex-grow-1 container">
         {role === 'teacher' ? (
           <TeacherDashboard />
         ) : (
@@ -28,7 +28,7 @@ function App() {
         )}
       </main>
 
-      <footer className="mt-5 py-3 text-center text-muted border-top">
+      <footer className="border-top py-3 text-center text-muted">
         <div className="container">
           &copy; 2026 E-Test System - Prepared for Node.js Backend
         </div>
