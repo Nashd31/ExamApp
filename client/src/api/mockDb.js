@@ -1,6 +1,26 @@
 // זה מידע זמני לשם הדגמה
 
-const mockDb = {
+// Load data from localStorage if available, otherwise use defaults
+const loadFromStorage = () => {
+  try {
+    const stored = localStorage.getItem('examApp_mockDb');
+    return stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.error('Error loading from localStorage:', error);
+    return null;
+  }
+};
+
+// Save data to localStorage
+export const saveToStorage = (data) => {
+  try {
+    localStorage.setItem('examApp_mockDb', JSON.stringify(data));
+  } catch (error) {
+    console.error('Error saving to localStorage:', error);
+  }
+};
+
+const defaultData = {
   exams: [
     {
       id: "1",
@@ -24,5 +44,7 @@ const mockDb = {
     { studentName: "Jane Smith", examId: "2", score: 95 }
   ]
 };
+
+const mockDb = loadFromStorage() || defaultData;
 
 export default mockDb;

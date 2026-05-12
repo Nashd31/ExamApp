@@ -1,4 +1,4 @@
-import mockDb from './mockDb';
+import mockDb, { saveToStorage } from './mockDb';
 
 const DELAY = 500;
 
@@ -31,7 +31,24 @@ export const createExam = (exam) => {
     setTimeout(() => {
       const newExam = { ...exam, id: Date.now().toString() };
       mockDb.exams.push(newExam);
+      saveToStorage(mockDb);
       resolve(newExam);
+    }, DELAY);
+  });
+};
+
+export const updateExam = (updatedExam) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const index = mockDb.exams.findIndex(e => e.id === updatedExam.id);
+      if (index !== -1) {
+        mockDb.exams[index] = { ...updatedExam };
+        saveToStorage(mockDb);
+        console.log('mockDb updated with exam:', mockDb.exams[index]);
+        resolve({ ...updatedExam });
+      } else {
+        reject(new Error("Exam not found"));
+      }
     }, DELAY);
   });
 };
