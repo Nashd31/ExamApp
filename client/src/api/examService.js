@@ -2,7 +2,6 @@ import mockDb, { saveToStorage } from './mockDb';
 
 const DELAY = 500;
 
-// מתודה המדגימה קריאה לשרת לקבלת כל המבחנים
 export const getAllExams = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -11,7 +10,6 @@ export const getAllExams = () => {
   });
 };
 
-// מתודה המדגימה קריאה לשרת לקבלת מבחן לפי מזהה
 export const getExamById = (id) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -25,11 +23,11 @@ export const getExamById = (id) => {
   });
 };
 
-// מתודה המדגימה קריאה לשרת ליצירת מבחן חדש
 export const createExam = (exam) => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const newExam = { ...exam, id: Date.now().toString() };
+      const { isNew, ...examData } = exam;
+      const newExam = { ...examData, id: Date.now().toString() };
       mockDb.exams.push(newExam);
       saveToStorage(mockDb);
       resolve(newExam);
@@ -46,6 +44,21 @@ export const updateExam = (updatedExam) => {
         saveToStorage(mockDb);
         console.log('mockDb updated with exam:', mockDb.exams[index]);
         resolve({ ...updatedExam });
+      } else {
+        reject(new Error("Exam not found"));
+      }
+    }, DELAY);
+  });
+};
+
+export const deleteExam = (id) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const index = mockDb.exams.findIndex(e => e.id === id);
+      if (index !== -1) {
+        mockDb.exams.splice(index, 1);
+        saveToStorage(mockDb);
+        resolve();
       } else {
         reject(new Error("Exam not found"));
       }
