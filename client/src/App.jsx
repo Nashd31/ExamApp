@@ -1,8 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import TeacherDashboard from './TeacherDashboard';
-import StudentPortal from './StudentPortal';
+import TeacherDashboard from './pages/TeacherDashboard';
+import StudentPortal from './pages/StudentPortal';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
 
 const Home = () => (
   <div className="text-center py-5">
@@ -26,26 +30,44 @@ const Home = () => (
 
 function App() {
   return (
-    <BrowserRouter basename="/ExamApp/">
-      <div style={appStyle}>
-        <header style={headerStyle}>
-          <Navbar />
-        </header>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <AuthProvider>
+        <div style={appStyle}>
+          <header style={headerStyle}>
+            <Navbar />
+          </header>
 
-        <main style={mainStyle}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/teacher" element={<TeacherDashboard />} />
-            <Route path="/student" element={<StudentPortal />} />
-          </Routes>
-        </main>
+          <main style={mainStyle}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/teacher"
+                element={
+                  <ProtectedRoute allowedRole="teacher">
+                    <TeacherDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/student"
+                element={
+                  <ProtectedRoute allowedRole="student">
+                    <StudentPortal />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </main>
 
-        <footer className="border-top py-3 text-center text-muted">
-          <div className="container">
-            &copy; 2026 E-Test System - Prepared for Node.js Backend
-          </div>
-        </footer>
-      </div>
+          <footer className="border-top py-3 text-center text-muted">
+            <div className="container">
+              &copy; 2026 E-Test System - Prepared for Node.js Backend
+            </div>
+          </footer>
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
