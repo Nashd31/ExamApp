@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getAllExams, createExam, updateExam, deleteExam } from './api/examService';
+import { getAllExams, createExam, updateExam, deleteExam } from '../api/examService';
+import { useAuth } from '../context/AuthContext';
+import { showSuccess, showError } from '../services/notify';
 
 const TeacherDashboard = () => {
+  const { user } = useAuth();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingExam, setEditingExam] = useState(null);
@@ -12,7 +15,7 @@ const TeacherDashboard = () => {
       const data = await getAllExams();
       setExams(data);
     } catch (error) {
-      console.error("Error fetching exams:", error);
+      showError('Error fetching exams: ' + (error.message || error));
     } finally {
       setLoading(false);
     }
@@ -105,7 +108,7 @@ const TeacherDashboard = () => {
       await deleteExam(examId);
       setExams(exams.filter(exam => exam.id !== examId));
     } catch (error) {
-      alert('Failed to delete exam: ' + error.message);
+      showError('Failed to delete exam: ' + (error.message || error));
     }
   };
 
@@ -124,9 +127,9 @@ const TeacherDashboard = () => {
       }
 
       setEditingExam(null);
-      console.log('Exam saved successfully in mockDb:', savedExam);
+      showSuccess('Exam saved successfully.');
     } catch (error) {
-      alert("Failed to save: " + error.message);
+      showError('Failed to save: ' + (error.message || error));
     }
   };
 
@@ -218,7 +221,8 @@ const TeacherDashboard = () => {
           <h3>Teacher Dashboard</h3>
         </div>
         <div className="card-body">
-          <h5 className="card-title mb-4">Manage Exams</h5>
+          <h5 className="card-title mb-1">Manage Exams</h5>
+          <p className="text-muted mb-4">Welcome back, {user?.name || 'Teacher'}. Use this dashboard to create, edit, and delete exams.</p>
           {loading ? (
             <div className="text-center my-5">
               <div className="spinner-border text-primary" role="status">

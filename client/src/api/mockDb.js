@@ -39,6 +39,22 @@ const defaultData = {
       ]
     }
   ],
+  users: [
+    {
+      id: "u1",
+      email: "teacher@test.com",
+      password: "123",
+      name: "Test Teacher",
+      role: "teacher"
+    },
+    {
+      id: "u2",
+      email: "student@test.com",
+      password: "123",
+      name: "Test Student",
+      role: "student"
+    }
+  ],
   studentScores: [
     { studentName: "John Doe", examId: "1", score: 80 },
     { studentName: "Jane Smith", examId: "2", score: 95 }

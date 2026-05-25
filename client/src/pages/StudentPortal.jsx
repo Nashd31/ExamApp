@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { getExamById } from './api/examService';
+import { getExamById } from '../api/examService';
+import { useAuth } from '../context/AuthContext';
+import { showError } from '../services/notify';
 
 const StudentPortal = () => {
+  const { user } = useAuth();
   const [examId, setExamId] = useState(''); // מזהה המבחן שהסטודנט רוצה לקחת  
   const [exam, setExam] = useState(null); // פרטי המבחן שנמצא
   const [error, setError] = useState(''); // הודעת שגיאה אם המבחן לא נמצא או שיש בעיה בטעינה
@@ -16,7 +19,9 @@ const StudentPortal = () => {
       const data = await getExamById(examId);
       setExam(data);
     } catch (err) {
-      setError(err.message);
+      const message = err?.message || 'Unable to find exam.';
+      setError(message);
+      showError(message);
     } finally {
       setLoading(false);
     }
@@ -29,7 +34,8 @@ const StudentPortal = () => {
           <h3>Student Portal</h3>
         </div>
         <div className="card-body">
-          <h5 className="card-title">Take an Exam</h5>
+          <h5 className="card-title">Welcome, {user?.name || 'Student'}</h5>
+          <p className="text-muted mb-3">Enter the Exam ID provided by your teacher to begin.</p>
           <div className="input-group mb-3">
             <input
               type="text"
