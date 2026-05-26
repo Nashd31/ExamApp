@@ -5,15 +5,26 @@ import { getStudentSubmissions } from '../api/examService';
 import { useAuth } from '../context/AuthContext';
 import { showError } from '../services/notify';
 
+/**
+ * Renders the Student Portal dashboard.
+ * Allows students to search for an exam by ID to take it,
+ * and displays a history of their past exam submissions.
+ */
 const StudentPortal = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [examId, setExamId] = useState(''); // מזהה המבחן שהסטודנט רוצה לקחת  
-  const [exam, setExam] = useState(null); // פרטי המבחן שנמצא
-  const [error, setError] = useState(''); // הודעת שגיאה אם המבחן לא נמצא או שיש בעיה בטעינה
-  const [loading, setLoading] = useState(false); // מצב טעינה
+  
+  const [examId, setExamId] = useState('');
+  const [exam, setExam] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [pastExams, setPastExams] = useState([]);
 
+  /**
+   * Fetches the details of an exam based on the provided exam ID.
+   * Validates if the exam exists and is currently published.
+   * Updates component state with the exam details or an error message.
+   */
   const handleFetchExam = async () => {
     if (!examId) return;
     setLoading(true);
@@ -37,6 +48,8 @@ const StudentPortal = () => {
     }
   };
 
+
+  // Loads the current student's past exam submissions on component mount.
   useEffect(() => {
     const loadPast = async () => {
       if (!user?.name) return;

@@ -2,6 +2,10 @@ import mockDb, { saveToStorage } from './mockDb';
 
 const DELAY = 500;
 
+/**
+ * Retrieves all exams from the mock database.
+ * Simulates a network request delay before resolving the promise.
+ */
 export const getAllExams = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -10,6 +14,10 @@ export const getAllExams = () => {
   });
 };
 
+/**
+ * Retrieves a specific exam by its ID.
+ * Resolves with a copy of the exam object if found, otherwise rejects with an error.
+ */
 export const getExamById = (id) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -23,6 +31,11 @@ export const getExamById = (id) => {
   });
 };
 
+/**
+ * Creates a new exam and adds it to the mock database.
+ * Generates a unique ID based on the current timestamp, removes the 'isNew' flag,
+ * and persists the updated database to local storage.
+ */
 export const createExam = (exam) => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -35,6 +48,11 @@ export const createExam = (exam) => {
   });
 };
 
+/**
+ * Updates an existing exam in the mock database.
+ * Locates the exam by its ID, updates its data in place, and persists the changes.
+ * Rejects if the exam cannot be found.
+ */
 export const updateExam = (updatedExam) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -51,6 +69,10 @@ export const updateExam = (updatedExam) => {
   });
 };
 
+/**
+ * Deletes an exam from the mock database by its ID.
+ * Removes the exam from the array and persists the changes to storage.
+ */
 export const deleteExam = (id) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -66,6 +88,13 @@ export const deleteExam = (id) => {
   });
 };
 
+/**
+ * Submits a student's answers for grading and records the submission.
+ * Validates the existence of the exam and its questions. Calculates the score
+ * by comparing student answers against expected answers for 'multiple_choice' questions.
+ * Open-ended questions are currently excluded from automatic grading.
+ * Generates a submission record and saves it to local storage.
+ */
 export const submitExam = (examId, studentName, studentAnswers) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -83,12 +112,16 @@ export const submitExam = (examId, studentName, studentAnswers) => {
 
       let correctCount = 0;
       let gradableCount = 0;
+      
+      // Calculate grade only for multiple choice questions
       questions.forEach((question, index) => {
         if (!question.type || question.type === 'multiple_choice') {
           gradableCount += 1;
           const key = question.id || index;
           const expected = question.answer;
           const given = studentAnswers[key];
+          
+          // Compare strict equality since options are indexed by number
           if (typeof given === 'number' && given === expected) {
             correctCount += 1;
           }
@@ -104,6 +137,11 @@ export const submitExam = (examId, studentName, studentAnswers) => {
   });
 };
 
+/**
+ * Retrieves all submissions made by a specific student.
+ * Maps over raw submissions to fetch the corresponding exam title and pass grade,
+ * yielding an array of structured result objects.
+ */
 export const getStudentSubmissions = (studentName) => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -122,6 +160,10 @@ export const getStudentSubmissions = (studentName) => {
   });
 };
 
+/**
+ * Retrieves all submissions associated with a specific exam.
+ * Used primarily by teachers to review class performance on a particular exam.
+ */
 export const getExamSubmissions = (examId) => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -131,6 +173,10 @@ export const getExamSubmissions = (examId) => {
   });
 };
 
+/**
+ * Retrieves a specific submission record for a given exam and student name.
+ * Useful for reviewing individual answers submitted by a student.
+ */
 export const getStudentSubmission = (examId, studentName) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {

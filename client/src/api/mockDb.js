@@ -1,12 +1,17 @@
 // זה מידע זמני לשם הדגמה
 
-// Load data from localStorage if available, otherwise use defaults
+/**
+ * Attempts to load the mock database from localStorage.
+ * Parses the JSON string and applies default fallback values for exam properties (e.g. duration, passGrade).
+ * If no data is found or an error occurs during parsing, returns null.
+ */
 const loadFromStorage = () => {
   try {
     const stored = localStorage.getItem('examApp_mockDb');
     if (stored) {
       const parsed = JSON.parse(stored);
       if (parsed && parsed.exams) {
+        // Ensure default values exist for exams loaded from older formats
         parsed.exams = parsed.exams.map(e => ({
           ...e,
           duration: e.duration || 60,
@@ -22,7 +27,10 @@ const loadFromStorage = () => {
   }
 };
 
-// Save data to localStorage
+/**
+ * Persists the provided mock database state into localStorage.
+ * Serializes the object into a JSON string under the key 'examApp_mockDb'.
+ */
 export const saveToStorage = (data) => {
   try {
     localStorage.setItem('examApp_mockDb', JSON.stringify(data));

@@ -2,8 +2,12 @@ import mockDb, { saveToStorage } from '../api/mockDb.js';
 
 const DELAY = 500;
 
+
+// Utility function to strip the password from a user object before returning it.
 const omitPassword = ({ password, ...user }) => user;
 
+
+// Simulates an API call to authenticate a user with their email and password.
 export const login = (email, password) => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -20,6 +24,10 @@ export const login = (email, password) => {
     });
 };
 
+/**
+ * Simulates an API call to register a new user.
+ * Checks for existing emails to prevent duplicates.
+ */
 export const register = (name, email, password, role) => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {

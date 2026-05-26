@@ -3,12 +3,20 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { showError } from '../services/notify';
 
+/**
+ * Renders the login page allowing users to authenticate.
+ * Redirects authenticated users to their respective dashboards based on their role.
+ */
 const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    /**
+     * Handles the login form submission.
+     * Attempts to log in the user and navigates upon success, or displays an error.
+     */
     const handleSubmit = async (event) => {
         event.preventDefault();
 

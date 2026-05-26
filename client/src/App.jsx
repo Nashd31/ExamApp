@@ -12,6 +12,8 @@ import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
+
+// Renders the landing page content with a welcome message and basic instructions.
 const Home = () => (
   <div className="text-center py-5">
     <h1 className="display-4">Welcome to E-Test System</h1>
@@ -32,6 +34,11 @@ const Home = () => (
   </div>
 );
 
+/**
+ * The main Application component.
+ * Configures React Router, sets up global context providers (AuthProvider),
+ * and defines the main layout and route mapping for the application.
+ */
 function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>

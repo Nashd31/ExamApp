@@ -4,6 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { getExamById, submitExam } from '../api/examService';
 import { showSuccess, showError } from '../services/notify';
 
+/**
+ * Renders the interface for taking an exam.
+ * Manages the countdown timer, student answers, and automatic/manual submission.
+ * Includes lockdown features to prevent navigation or refreshing during the exam.
+ */
 const TakeExam = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -15,6 +20,8 @@ const TakeExam = () => {
     const [timeLeft, setTimeLeft] = useState(null); // seconds
     const [submitted, setSubmitted] = useState(false);
 
+
+    // Fetches the exam data and initializes the countdown timer.
     useEffect(() => {
         const loadExam = async () => {
             setLoading(true);
@@ -38,7 +45,7 @@ const TakeExam = () => {
         }
     }, [id]);
 
-    // countdown interval
+    // Manages the countdown timer, decrementing it every second.
     useEffect(() => {
         if (timeLeft === null || submitted) return;
         const tick = setInterval(() => {
@@ -55,7 +62,8 @@ const TakeExam = () => {
         return () => clearInterval(tick);
     }, [timeLeft, submitted]);
 
-    // auto-submit when timeLeft reaches zero
+
+    // Automatically submits the exam when the countdown timer reaches zero.
     useEffect(() => {
         if (timeLeft === 0 && exam && !submitted) {
             const autoSubmit = async () => {
@@ -75,7 +83,12 @@ const TakeExam = () => {
         }
     }, [timeLeft, exam, submitted, answers, navigate, user]);
 
-    // Lockdown: warn on unload and prevent some actions while exam is active
+    /**
+     * Implements basic browser lockdown features:
+     * - Warns on page unload (refresh/close).
+     * - Disables right-click context menu.
+     * - Blocks common refresh shortcuts (F5, Ctrl+R).
+     */
     useEffect(() => {
         if (!exam || submitted) return;
 
@@ -107,7 +120,8 @@ const TakeExam = () => {
         };
     }, [exam, submitted]);
 
-    // History Trap: Block back button navigation
+
+    // Prevents the user from using the browser's back button during the exam.
     useEffect(() => {
         if (!exam || submitted) return;
 
@@ -127,6 +141,7 @@ const TakeExam = () => {
         };
     }, [exam, submitted]);
 
+    // Updates the local state when the student changes an answer.
     const handleAnswerChange = (questionId, value) => {
         setAnswers((prev) => ({
             ...prev,
@@ -134,6 +149,8 @@ const TakeExam = () => {
         }));
     };
 
+
+    // Submits the exam answers manually upon user confirmation.
     const handleSubmit = async () => {
         if (!exam) return;
 
@@ -151,6 +168,8 @@ const TakeExam = () => {
         }
     };
 
+
+    // Formats the remaining seconds into a MM:SS string format.
     const formatTime = (secs) => {
         if (secs == null) return '--:--';
         const m = Math.floor(secs / 60).toString().padStart(2, '0');

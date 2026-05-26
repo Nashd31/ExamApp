@@ -2,10 +2,16 @@ import React from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
+/**
+ * Main navigation bar component.
+ * Displays appropriate navigation links based on user authentication status and role.
+ * Automatically hides on exam-taking pages to prevent distraction/navigation.
+ */
 const Navbar = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
 
+    // Hide navbar completely while taking an exam
     if (location.pathname.startsWith('/take-exam')) {
         return null;
     }
