@@ -65,3 +65,58 @@ export const deleteExam = (id) => {
     }, DELAY);
   });
 };
+
+export const submitExam = (examId, studentName, studentAnswers) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const exam = mockDb.exams.find((e) => e.id === examId);
+      if (!exam) {
+        reject(new Error('Exam not found'));
+        return;
+      }
+
+      const questions = exam.questions || [];
+      if (!Array.isArray(questions) || questions.length === 0) {
+        reject(new Error('Exam contains no questions'));
+        return;
+      }
+
+      let correctCount = 0;
+      let gradableCount = 0;
+      questions.forEach((question, index) => {
+        if (!question.type || question.type === 'multiple_choice') {
+          gradableCount += 1;
+          const key = question.id || index;
+          const expected = question.answer;
+          const given = studentAnswers[key];
+          if (typeof given === 'number' && given === expected) {
+            correctCount += 1;
+          }
+        }
+      });
+
+      const score = gradableCount > 0 ? Math.round((correctCount / gradableCount) * 100) : 0;
+      mockDb.studentScores = mockDb.studentScores || [];
+      mockDb.studentScores.push({ studentName, examId, score, answers: studentAnswers });
+      saveToStorage(mockDb);
+      resolve(score);
+    }, DELAY);
+  });
+};
+
+export const getStudentSubmissions = (studentName) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const scores = (mockDb.studentScores || []).filter(s => s.studentName === studentName);
+      const results = scores.map(s => {
+        const exam = mockDb.exams.find(e => e.id === s.examId) || {};
+        return {
+          examId: s.examId,
+          title: exam.title || 'Unknown Exam',
+          score: s.score,
+        };
+      });
+      resolve(results);
+    }, DELAY);
+  });
+};

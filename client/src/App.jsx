@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentPortal from './pages/StudentPortal';
+import TakeExam from './pages/TakeExam';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
@@ -37,35 +38,47 @@ function App() {
             <Navbar />
           </header>
 
-          <main style={mainStyle}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route
-                path="/teacher"
-                element={
-                  <ProtectedRoute allowedRole="teacher">
-                    <TeacherDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/student"
-                element={
-                  <ProtectedRoute allowedRole="student">
-                    <StudentPortal />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </main>
+          <div style={contentWrapperStyle}>
+            <main style={mainStyle}>
+              <div className="container py-3">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route
+                    path="/teacher"
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <TeacherDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/student"
+                    element={
+                      <ProtectedRoute allowedRole="student">
+                        <StudentPortal />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/take-exam/:id"
+                    element={
+                      <ProtectedRoute allowedRole="student">
+                        <TakeExam />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Routes>
+              </div>
+            </main>
 
-          <footer className="border-top py-3 text-center text-muted">
-            <div className="container">
-              &copy; 2026 E-Test System - Prepared for Node.js Backend
-            </div>
-          </footer>
+            <footer className="border-top py-3 text-center text-muted bg-dark text-white">
+              <div className="container text-white">
+                &copy; 2026 E-Test System - Prepared for Node.js Backend
+              </div>
+            </footer>
+          </div>
         </div>
       </AuthProvider>
     </BrowserRouter>
@@ -88,16 +101,20 @@ const headerStyle = {
   position: 'sticky',
   top: 0,
   zIndex: 1000,
-  background: 'white',
   flexShrink: 0,
   borderBottom: '1px solid #ddd',
 };
 
-const mainStyle = {
+const contentWrapperStyle = {
   flex: 1,
   overflowY: 'auto',
   overflowX: 'hidden',
+  scrollbarGutter: 'stable',
+};
+
+const mainStyle = {
+  minHeight: '100%',
   paddingTop: '1rem',
   paddingBottom: '1rem',
-  scrollbarGutter: 'stable',
+  background: 'linear-gradient(135deg, #eef2ff, #c7d2fe)',
 };

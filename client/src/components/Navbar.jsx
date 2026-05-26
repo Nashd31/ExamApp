@@ -1,14 +1,19 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
     const { user, logout } = useAuth();
+    const location = useLocation();
+
+    if (location.pathname.startsWith('/take-exam')) {
+        return null;
+    }
 
     return (
-        <nav className="navbar navbar-expand-lg navbar-dark bg-dark p-3">
+        <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4 py-3">
             <div className="container-fluid">
-                <NavLink className="navbar-brand" to="/">
+                <NavLink className="navbar-brand fs-3" to="/">
                     E-Test System
                 </NavLink>
                 <button
@@ -23,7 +28,7 @@ const Navbar = () => {
                     <span className="navbar-toggler-icon"></span>
                 </button>
                 <div className="collapse navbar-collapse" id="navbarNav">
-                    <ul className="navbar-nav ms-auto align-items-center">
+                    <ul className="navbar-nav ms-auto align-items-center gap-1">
                         <li className="nav-item">
                             <NavLink
                                 className={({ isActive }) =>

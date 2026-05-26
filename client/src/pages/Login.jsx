@@ -27,8 +27,8 @@ const Login = () => {
     return (
         <div className="container py-5">
             <div className="row justify-content-center">
-                <div className="col-md-6">
-                    <div className="card shadow-sm">
+                <div className="col-md-6 justify-content-center d-flex">
+                    <div className="card shadow-sm rounded-5 px-5 py-4 w-75">
                         <div className="card-body">
                             <h2 className="card-title mb-4 text-center">Login</h2>
                             <form onSubmit={handleSubmit}>

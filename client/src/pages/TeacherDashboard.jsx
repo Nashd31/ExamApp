@@ -68,6 +68,7 @@ const TeacherDashboard = () => {
     const newQuestion = {
       id: `q${Date.now()}`,
       text: 'New Question',
+      type: 'multiple_choice',
       options: ['Option 1', 'Option 2'],
       answer: 0
     };
@@ -86,6 +87,7 @@ const TeacherDashboard = () => {
   const handleCreateClick = () => {
     setEditingExam({
       title: 'New Exam',
+      duration: 60,
       questions: [
         {
           id: `q${Date.now()}`,
@@ -136,66 +138,102 @@ const TeacherDashboard = () => {
   if (editingExam) {
     return (
       <div className="container mt-4 mb-5">
-        <div className="card shadow">
-          <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div className="card shadow rounded-4">
+          <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center p-4 rounded-top-4">
             <h3>{editingExam.isNew ? 'Creating New Exam:' : 'Editing Exam:'} {editingExam.title}</h3>
-            <button className="btn btn-light btn-sm" onClick={() => setEditingExam(null)}>Back to List</button>
+            <button className="btn btn-outline-light px-4" onClick={() => setEditingExam(null)}>Back to List</button>
           </div>
-          <div className="card-body">
+          <div className="card-body px-5 py-4">
             <div className="mb-4">
-              <label className="form-label fw-bold">Exam Title</label>
+              <h5 className="form-label mb-2">Exam Title</h5>
               <input
                 className="form-control form-control-lg"
                 value={editingExam.title}
                 onChange={handleTitleChange}
               />
             </div>
+            <div className="mb-4">
+              <label className="form-label mb-2">Duration (minutes)</label>
+              <input
+                type="number"
+                min={1}
+                className="form-control"
+                value={editingExam.duration || 60}
+                onChange={(e) => setEditingExam({ ...editingExam, duration: Number(e.target.value) })}
+              />
+            </div>
 
             <h5 className="border-bottom pb-2 mb-3">Questions</h5>
             {editingExam.questions.map((q, qIndex) => (
-              <div key={q.id} className="card mb-4 border-secondary">
-                <div className="card-body bg-light">
+              <div key={q.id} className="card mb-4 border-secondary rounded-4">
+                <div className="card-body bg-light rounded-4 p-4">
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <h6 className="mb-0">Question {qIndex + 1}</h6>
                     <button className="btn btn-outline-danger btn-sm" onClick={() => handleRemoveQuestion(qIndex)}>Remove Question</button>
                   </div>
-                  <input
-                    className="form-control mb-3"
-                    value={q.text}
-                    onChange={(e) => handleQuestionChange(qIndex, 'text', e.target.value)}
-                    placeholder="Enter question text"
-                  />
+                  <div className="d-flex gap-3 mb-3">
+                    <input
+                      className="form-control"
+                      value={q.text}
+                      onChange={(e) => handleQuestionChange(qIndex, 'text', e.target.value)}
+                      placeholder="Enter question text"
+                    />
+                    <select
+                      className="form-select w-auto"
+                      value={q.type || 'multiple_choice'}
+                      onChange={(e) => {
+                        handleQuestionChange(qIndex, 'type', e.target.value);
+                        if (e.target.value === 'multiple_choice' && !q.options) {
+                          handleQuestionChange(qIndex, 'options', ['Option 1', 'Option 2']);
+                          handleQuestionChange(qIndex, 'answer', 0);
+                        }
+                      }}
+                    >
+                      <option value="multiple_choice">Multiple Choice</option>
+                      <option value="open_ended">Open Ended</option>
+                    </select>
+                  </div>
 
                   <div className="ms-3">
-                    <label className="form-label small text-muted">Options (Select the correct one):</label>
-                    {q.options.map((opt, oIndex) => (
-                      <div key={oIndex} className="input-group mb-2">
-                        <div className="input-group-text">
-                          <input
-                            type="radio"
-                            name={`q${qIndex}`}
-                            className="form-check-input mt-0"
-                            checked={q.answer === oIndex}
-                            onChange={() => handleQuestionChange(qIndex, 'answer', oIndex)}
-                          />
-                        </div>
-                        <input
-                          className="form-control"
-                          value={opt}
-                          onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
-                        />
-                        <button
-                          className="btn btn-outline-secondary"
-                          onClick={() => handleRemoveOption(qIndex, oIndex)}
-                          disabled={q.options.length <= 2}
-                        >
-                          &times;
+                    {(!q.type || q.type === 'multiple_choice') ? (
+                      <>
+                        <label className="form-label small text-muted">Options (Select the correct one):</label>
+                        {q.options?.map((opt, oIndex) => (
+                          <div key={oIndex} className="input-group mb-2">
+                            <div className="input-group-text">
+                              <input
+                                type="radio"
+                                name={`q${qIndex}`}
+                                className="form-check-input mt-0"
+                                checked={q.answer === oIndex}
+                                onChange={() => handleQuestionChange(qIndex, 'answer', oIndex)}
+                              />
+                            </div>
+                            <input
+                              className="form-control"
+                              value={opt}
+                              onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
+                            />
+                            <button
+                              className="btn btn-outline-secondary"
+                              onClick={() => handleRemoveOption(qIndex, oIndex)}
+                              disabled={q.options.length <= 2}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        ))}
+                        <button className="btn btn-sm btn-link text-decoration-none p-0" onClick={() => handleAddOption(qIndex)}>
+                          + Add Option
                         </button>
-                      </div>
-                    ))}
-                    <button className="btn btn-sm btn-link text-decoration-none p-0" onClick={() => handleAddOption(qIndex)}>
-                      + Add Option
-                    </button>
+                      </>
+                    ) : (
+                      <textarea
+                        className="form-control mt-2"
+                        disabled
+                        value="Student will write their answer here."
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -215,12 +253,12 @@ const TeacherDashboard = () => {
   }
 
   return (
-    <div className="container mt-4">
-      <div className="card shadow">
-        <div className="card-header bg-primary text-white">
+    <div className="container mt-4 mb-5" >
+      <div className="card shadow rounded-4">
+        <div className="card-header bg-primary text-white p-4 rounded-top-4">
           <h3>Teacher Dashboard</h3>
         </div>
-        <div className="card-body">
+        <div className="card-body px-5 py-4">
           <h5 className="card-title mb-1">Manage Exams</h5>
           <p className="text-muted mb-4">Welcome back, {user?.name || 'Teacher'}. Use this dashboard to create, edit, and delete exams.</p>
           {loading ? (
