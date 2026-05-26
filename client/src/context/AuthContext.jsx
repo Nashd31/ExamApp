@@ -6,10 +6,17 @@ import { logError } from '../services/logger';
 
 const AuthContext = createContext(null);
 
+/**
+ * Provides authentication state and methods (login, register, logout) to the component tree.
+ * Initializes user state from local storage.
+ */
 export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
+    // Initialize user state from persistent storage
     const [user, setUser] = useState(() => getItem('user'));
 
+    
+    // Authenticates a user and updates global state and storage.
     const login = async (email, password) => {
         try {
             const userData = await authLogin(email, password);
@@ -22,6 +29,8 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    
+    // Registers a new user and automatically logs them in.
     const register = async (name, email, password, role) => {
         try {
             const userData = await authRegister(name, email, password, role);
@@ -34,6 +43,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Clears user session from state and storage, then redirects to login.
     const logout = () => {
         removeItem('user');
         setUser(null);
@@ -47,6 +57,10 @@ export const AuthProvider = ({ children }) => {
     );
 };
 
+/**
+ * Custom hook to consume the AuthContext.
+ * Ensures the hook is used within an AuthProvider hierarchy.
+ */
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

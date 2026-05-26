@@ -4,6 +4,11 @@ import { getAllExams, createExam, updateExam, deleteExam, getExamSubmissions } f
 import { useAuth } from '../context/AuthContext';
 import { showSuccess, showError } from '../services/notify';
 
+/**
+ * TeacherDashboard Component
+ * Provides a comprehensive interface for teachers to manage exams.
+ * Capabilities include creating, editing, publishing, deleting exams, and viewing student submissions/scores.
+ */
 const TeacherDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,6 +19,8 @@ const TeacherDashboard = () => {
   const [viewingScoresFor, setViewingScoresFor] = useState(null);
   const [examSubmissions, setExamSubmissions] = useState([]);
 
+
+  // Fetches all exams from the server and updates local state.
   const fetchExams = async () => {
     setLoading(true);
     try {
@@ -26,10 +33,15 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Initial load of all exams when the component mounts
   useEffect(() => {
     fetchExams();
   }, []);
 
+  /**
+   * Effect to handle automatic navigation back to a specific exam's scores view.
+   * Commonly triggered when returning from a specific student's exam review page.
+   */
   useEffect(() => {
     if (exams.length > 0 && location.state?.returnToScoresFor) {
       const examId = location.state.returnToScoresFor;
@@ -37,14 +49,20 @@ const TeacherDashboard = () => {
       if (exam) {
         handleViewScores(exam);
       }
+      // Clear location state to prevent infinite loops on reload
       navigate('/teacher', { replace: true, state: {} });
     }
   }, [exams, location.state, navigate]);
 
+  // Prepares an exam for editing by creating a deep copy to avoid mutating the original state directly.
   const handleEditClick = (exam) => {
     setEditingExam(JSON.parse(JSON.stringify(exam)));
   };
 
+  /**
+   * Toggles the published status of an exam. 
+   * A published exam becomes visible to students to take.
+   */
   const handleTogglePublish = async (exam) => {
     try {
       const updated = { ...exam, isPublished: !exam.isPublished };
@@ -56,6 +74,8 @@ const TeacherDashboard = () => {
     }
   };
 
+
+  // Fetches and displays all student submissions for a specific exam.
   const handleViewScores = async (exam) => {
     setViewingScoresFor(exam);
     try {
@@ -66,32 +86,43 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Updates the title of the exam currently being edited.
   const handleTitleChange = (e) => {
     setEditingExam({ ...editingExam, title: e.target.value });
   };
 
+  // Updates a specific field (text, type, answer, etc.) of a question within the exam currently being edited.
   const handleQuestionChange = (qIndex, field, value) => {
     const updatedQuestions = [...editingExam.questions];
     updatedQuestions[qIndex][field] = value;
     setEditingExam({ ...editingExam, questions: updatedQuestions });
   };
 
+  // Updates the text of a specific option within a multiple-choice question.
+  
   const handleOptionChange = (qIndex, oIndex, value) => {
     const updatedQuestions = [...editingExam.questions];
     updatedQuestions[qIndex].options[oIndex] = value;
     setEditingExam({ ...editingExam, questions: updatedQuestions });
   };
 
+  
+  // Appends a new blank option to a multiple-choice question.
   const handleAddOption = (qIndex) => {
     const updatedQuestions = [...editingExam.questions];
     updatedQuestions[qIndex].options.push('New Option');
     setEditingExam({ ...editingExam, questions: updatedQuestions });
   };
 
+  /**
+   * Removes a specific option from a multiple-choice question.
+   * Adjusts the correct answer index if the removed option shifts the indexes.
+   */
   const handleRemoveOption = (qIndex, oIndex) => {
     const updatedQuestions = [...editingExam.questions];
     if (updatedQuestions[qIndex].options.length > 2) {
       updatedQuestions[qIndex].options.splice(oIndex, 1);
+      // Adjust the selected correct answer to ensure validity
       if (updatedQuestions[qIndex].answer === oIndex) {
         updatedQuestions[qIndex].answer = 0;
       } else if (updatedQuestions[qIndex].answer > oIndex) {
@@ -101,6 +132,8 @@ const TeacherDashboard = () => {
     }
   };
 
+
+  // Appends a new default multiple-choice question to the current exam.
   const handleAddQuestion = () => {
     const newQuestion = {
       id: `q${Date.now()}`,
@@ -115,12 +148,14 @@ const TeacherDashboard = () => {
     });
   };
 
+  // Removes a specific question from the current exam.
   const handleRemoveQuestion = (qIndex) => {
     const updatedQuestions = [...editingExam.questions];
     updatedQuestions.splice(qIndex, 1);
     setEditingExam({ ...editingExam, questions: updatedQuestions });
   };
 
+  // Initializes a new, empty exam template and sets it as the active editing exam.
   const handleCreateClick = () => {
     setEditingExam({
       title: 'New Exam',
@@ -139,6 +174,7 @@ const TeacherDashboard = () => {
     });
   };
 
+  // Prompts for confirmation and deletes the specified exam if confirmed.
   const handleDeleteClick = async (examId) => {
     const confirmed = window.confirm('Are you sure you want to delete this exam?');
     if (!confirmed) {
@@ -153,6 +189,8 @@ const TeacherDashboard = () => {
     }
   };
 
+
+  // Persists the currently edited exam (either creating a new one or updating an existing one).
   const handleSave = async () => {
     try {
       let savedExam;
@@ -174,6 +212,7 @@ const TeacherDashboard = () => {
     }
   };
 
+  // Render view: Viewing scores for a specific exam
   if (viewingScoresFor) {
     return (
       <div className="container mt-4 mb-5">
@@ -228,6 +267,7 @@ const TeacherDashboard = () => {
     );
   }
 
+  // Render view: Creating or editing an exam
   if (editingExam) {
     return (
       <div className="container mt-4 mb-5">
@@ -289,6 +329,7 @@ const TeacherDashboard = () => {
                       value={q.type || 'multiple_choice'}
                       onChange={(e) => {
                         handleQuestionChange(qIndex, 'type', e.target.value);
+                        // Auto-populate required fields when switching to multiple choice
                         if (e.target.value === 'multiple_choice' && !q.options) {
                           handleQuestionChange(qIndex, 'options', ['Option 1', 'Option 2']);
                           handleQuestionChange(qIndex, 'answer', 0);
@@ -358,6 +399,7 @@ const TeacherDashboard = () => {
     );
   }
 
+  // Render view: Default main dashboard listing all exams
   return (
     <div className="container mt-4 mb-5" >
       <div className="card shadow rounded-4">

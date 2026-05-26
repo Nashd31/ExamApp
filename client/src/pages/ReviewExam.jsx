@@ -4,6 +4,11 @@ import { getExamById, getStudentSubmission } from '../api/examService';
 import { useAuth } from '../context/AuthContext';
 import { showError } from '../services/notify';
 
+/**
+ * ReviewExam Component
+ * Displays a detailed review of a student's exam submission, including correct and incorrect answers.
+ * It is used by both students (to review their own exams) and teachers (to review specific students).
+ */
 const ReviewExam = () => {
   const { id, studentName } = useParams();
   const navigate = useNavigate();
@@ -16,6 +21,10 @@ const ReviewExam = () => {
   // If a teacher provides a specific studentName in the URL, use that. Otherwise, default to the logged-in student.
   const targetStudent = studentName || user.name;
 
+  /**
+   * Fetches both the exam details and the specific student's submission in parallel.
+   * Handles loading states and error notifications if the fetch fails.
+   */
   useEffect(() => {
     const fetchReviewData = async () => {
       try {
@@ -34,6 +43,10 @@ const ReviewExam = () => {
     fetchReviewData();
   }, [id, targetStudent]);
 
+  /**
+   * Navigates the user back to their respective dashboard based on their role.
+   * Teachers return to the specific exam's scores view, students return to the main student portal.
+   */
   const handleBack = () => {
     if (user.role === 'teacher') {
       navigate('/teacher', { state: { returnToScoresFor: id } });
@@ -78,8 +91,8 @@ const ReviewExam = () => {
         </div>
         <div className="card-body p-4 p-md-5">
           {exam.questions.map((q, qIndex) => {
+            // Retrieve the specific answer the student provided for this question
             const studentAnswer = submission.answers[q.id || qIndex];
-            const isCorrect = studentAnswer === q.answer;
             
             return (
               <div key={q.id || qIndex} className="card mb-4 border-secondary rounded-4">
@@ -96,6 +109,7 @@ const ReviewExam = () => {
                         let icon = '';
                         let bgColor = '';
 
+                        // Determine styling and icons based on whether the option is correct, selected by the student, or both
                         if (oIndex === q.answer && oIndex === studentAnswer) {
                           textClass = 'text-success fw-bold';
                           icon = ' ✓';
