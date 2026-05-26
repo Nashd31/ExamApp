@@ -1,40 +1,120 @@
-import React, { useState } from 'react';
-import TeacherDashboard from './TeacherDashboard';
-import StudentPortal from './StudentPortal';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import TeacherDashboard from './pages/TeacherDashboard';
+import StudentPortal from './pages/StudentPortal';
+import TakeExam from './pages/TakeExam';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+
+const Home = () => (
+  <div className="text-center py-5">
+    <h1 className="display-4">Welcome to E-Test System</h1>
+    <p className="lead">
+      A comprehensive platform for creating, managing, and taking exams.
+    </p>
+    <div className="mt-4">
+      <p>Use the navigation menu above to access:</p>
+      <ul className="list-unstyled">
+        <li className="mb-2">
+          <strong>Teacher Dashboard</strong> - Create and manage exams
+        </li>
+        <li className="mb-2">
+          <strong>Student Portal</strong> - Take exams and view results
+        </li>
+      </ul>
+    </div>
+  </div>
+);
 
 function App() {
-  const [role, setRole] = useState('teacher'); // 'teacher' or 'student'
-
-  const toggleRole = () => {
-    setRole(prevRole => (prevRole === 'teacher' ? 'student' : 'teacher'));
-  };
-
   return (
-    <div className="d-flex flex-column min-vh-100">
-      <header className="navbar navbar-dark bg-dark">
-        <div className="container py-3">
-          <span className="navbar-brand mb-0 h1">E-Test System</span>
-          <button className="btn btn-outline-light" onClick={toggleRole}>
-            Switch to {role === 'teacher' ? 'Student' : 'Teacher'} View
-          </button>
-        </div>
-      </header>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <AuthProvider>
+        <div style={appStyle}>
+          <header style={headerStyle}>
+            <Navbar />
+          </header>
 
-      <main className="flex-grow-1 container">
-        {role === 'teacher' ? (
-          <TeacherDashboard />
-        ) : (
-          <StudentPortal />
-        )}
-      </main>
+          <div style={contentWrapperStyle}>
+            <main style={mainStyle}>
+              <div className="container py-3">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route
+                    path="/teacher"
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <TeacherDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/student"
+                    element={
+                      <ProtectedRoute allowedRole="student">
+                        <StudentPortal />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/take-exam/:id"
+                    element={
+                      <ProtectedRoute allowedRole="student">
+                        <TakeExam />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Routes>
+              </div>
+            </main>
 
-      <footer className="border-top py-3 text-center text-muted">
-        <div className="container">
-          &copy; 2026 E-Test System - Prepared for Node.js Backend
+            <footer className="border-top py-3 text-center text-muted bg-dark text-white">
+              <div className="container text-white">
+                &copy; 2026 E-Test System - Prepared for Node.js Backend
+              </div>
+            </footer>
+          </div>
         </div>
-      </footer>
-    </div>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
 export default App;
+
+
+/* ---------- STYLES ---------- */
+
+const appStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100vh',
+  overflow: 'hidden',
+};
+
+const headerStyle = {
+  position: 'sticky',
+  top: 0,
+  zIndex: 1000,
+  flexShrink: 0,
+  borderBottom: '1px solid #ddd',
+};
+
+const contentWrapperStyle = {
+  flex: 1,
+  overflowY: 'auto',
+  overflowX: 'hidden',
+  scrollbarGutter: 'stable',
+};
+
+const mainStyle = {
+  minHeight: '100%',
+  paddingTop: '1rem',
+  paddingBottom: '1rem',
+  background: 'linear-gradient(135deg, #eef2ff, #c7d2fe)',
+};
