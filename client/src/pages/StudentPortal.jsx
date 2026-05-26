@@ -21,7 +21,13 @@ const StudentPortal = () => {
     setExam(null);
     try {
       const data = await getExamById(examId);
-      setExam(data);
+      if (data && !data.isPublished) {
+        const message = 'This exam is not yet published.';
+        setError(message);
+        showError(message);
+      } else {
+        setExam(data);
+      }
     } catch (err) {
       const message = err?.message || 'Unable to find exam.';
       setError(message);
@@ -97,11 +103,13 @@ const StudentPortal = () => {
             <p className="text-muted">No past exams found.</p>
           ) : (
             <div className="table-responsive">
-              <table className="table table-sm">
+              <table className="table table-hover align-middle">
                 <thead>
                   <tr>
                     <th>Exam</th>
                     <th>Score</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -109,6 +117,21 @@ const StudentPortal = () => {
                     <tr key={p.examId}>
                       <td>{p.title}</td>
                       <td>{p.score}%</td>
+                      <td>
+                        {p.score >= p.passGrade ? (
+                          <span className="badge bg-success">Passed</span>
+                        ) : (
+                          <span className="badge bg-danger">Failed</span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-outline-info"
+                          onClick={() => navigate(`/review-exam/${p.examId}`)}
+                        >
+                          Review
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

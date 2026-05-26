@@ -96,8 +96,8 @@ export const submitExam = (examId, studentName, studentAnswers) => {
       });
 
       const score = gradableCount > 0 ? Math.round((correctCount / gradableCount) * 100) : 0;
-      mockDb.studentScores = mockDb.studentScores || [];
-      mockDb.studentScores.push({ studentName, examId, score, answers: studentAnswers });
+      mockDb.submissions = mockDb.submissions || [];
+      mockDb.submissions.push({ id: Date.now().toString(), studentName, examId, score, answers: studentAnswers });
       saveToStorage(mockDb);
       resolve(score);
     }, DELAY);
@@ -107,16 +107,39 @@ export const submitExam = (examId, studentName, studentAnswers) => {
 export const getStudentSubmissions = (studentName) => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const scores = (mockDb.studentScores || []).filter(s => s.studentName === studentName);
+      const scores = (mockDb.submissions || []).filter(s => s.studentName === studentName);
       const results = scores.map(s => {
         const exam = mockDb.exams.find(e => e.id === s.examId) || {};
         return {
           examId: s.examId,
           title: exam.title || 'Unknown Exam',
           score: s.score,
+          passGrade: exam.passGrade || 50
         };
       });
       resolve(results);
+    }, DELAY);
+  });
+};
+
+export const getExamSubmissions = (examId) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const submissions = (mockDb.submissions || []).filter(s => s.examId === examId);
+      resolve(submissions);
+    }, DELAY);
+  });
+};
+
+export const getStudentSubmission = (examId, studentName) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const submission = (mockDb.submissions || []).find(s => s.examId === examId && s.studentName === studentName);
+      if (submission) {
+        resolve({ ...submission });
+      } else {
+        reject(new Error("Submission not found"));
+      }
     }, DELAY);
   });
 };

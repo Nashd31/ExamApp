@@ -4,7 +4,10 @@ import Navbar from './components/Navbar';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentPortal from './pages/StudentPortal';
 import TakeExam from './pages/TakeExam';
+import ReviewExam from './pages/ReviewExam';
+import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
 import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -32,19 +35,34 @@ const Home = () => (
 function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <ScrollToTop />
       <AuthProvider>
         <div style={appStyle}>
           <header style={headerStyle}>
             <Navbar />
           </header>
 
-          <div style={contentWrapperStyle}>
+          <div id="main-scroll-container" style={contentWrapperStyle}>
             <main style={mainStyle}>
               <div className="container py-3">
                 <Routes>
                   <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
+                  <Route
+                    path="/login"
+                    element={
+                      <PublicRoute>
+                        <Login />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/register"
+                    element={
+                      <PublicRoute>
+                        <Register />
+                      </PublicRoute>
+                    }
+                  />
                   <Route
                     path="/teacher"
                     element={
@@ -66,6 +84,22 @@ function App() {
                     element={
                       <ProtectedRoute allowedRole="student">
                         <TakeExam />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/review-exam/:id"
+                    element={
+                      <ProtectedRoute allowedRole="student">
+                        <ReviewExam />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/teacher/review-exam/:id/:studentName"
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <ReviewExam />
                       </ProtectedRoute>
                     }
                   />
