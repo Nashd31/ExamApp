@@ -26,16 +26,17 @@ const defaultData = {
       id: "1",
       title: "JavaScript Basics",
       questions: [
-        { id: "q1", text: "What is a closure?", options: ["A function", "A variable", "A loop"], answer: 0 },
-        { id: "q2", text: "What is 'NaN'?", options: ["Not a Number", "Now and Next", "New and Null"], answer: 0 }
+        { id: "q1", type: "multiple_choice", text: "What is a closure?", options: ["A function", "A variable", "A loop"], answer: 0 },
+        { id: "q2", type: "multiple_choice", text: "What is 'NaN'?", options: ["Not a Number", "Now and Next", "New and Null"], answer: 0 },
+        { id: "q5", type: "open_ended", text: "Explain the difference between let, const, and var." }
       ]
     },
     {
       id: "2",
       title: "React Fundamentals",
       questions: [
-        { id: "q3", text: "What is a Hook?", options: ["A React feature", "A CSS selector", "A HTML tag"], answer: 0 },
-        { id: "q4", text: "What is JSX?", options: ["Syntax extension", "JavaScript XML", "Both"], answer: 2 }
+        { id: "q3", type: "multiple_choice", text: "What is a Hook?", options: ["A React feature", "A CSS selector", "A HTML tag"], answer: 0 },
+        { id: "q4", type: "multiple_choice", text: "What is JSX?", options: ["Syntax extension", "JavaScript XML", "Both"], answer: 2 }
       ]
     }
   ],
