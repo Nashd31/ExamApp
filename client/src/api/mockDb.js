@@ -4,7 +4,18 @@
 const loadFromStorage = () => {
   try {
     const stored = localStorage.getItem('examApp_mockDb');
-    return stored ? JSON.parse(stored) : null;
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.exams) {
+        parsed.exams = parsed.exams.map(e => ({
+          ...e,
+          duration: e.duration || 60,
+          passGrade: e.passGrade || 50
+        }));
+      }
+      return parsed;
+    }
+    return null;
   } catch (error) {
     console.error('Error loading from localStorage:', error);
     return null;
@@ -25,6 +36,9 @@ const defaultData = {
     {
       id: "1",
       title: "JavaScript Basics",
+      isPublished: true,
+      duration: 45,
+      passGrade: 60,
       questions: [
         { id: "q1", type: "multiple_choice", text: "What is a closure?", options: ["A function", "A variable", "A loop"], answer: 0 },
         { id: "q2", type: "multiple_choice", text: "What is 'NaN'?", options: ["Not a Number", "Now and Next", "New and Null"], answer: 0 },
@@ -34,6 +48,9 @@ const defaultData = {
     {
       id: "2",
       title: "React Fundamentals",
+      isPublished: false,
+      duration: 90,
+      passGrade: 55,
       questions: [
         { id: "q3", type: "multiple_choice", text: "What is a Hook?", options: ["A React feature", "A CSS selector", "A HTML tag"], answer: 0 },
         { id: "q4", type: "multiple_choice", text: "What is JSX?", options: ["Syntax extension", "JavaScript XML", "Both"], answer: 2 }
@@ -54,11 +71,38 @@ const defaultData = {
       password: "123",
       name: "Test Student",
       role: "student"
+    },
+    {
+      id: "u3",
+      email: "john@test.com",
+      password: "123",
+      name: "John Doe",
+      role: "student"
     }
   ],
-  studentScores: [
-    { studentName: "John Doe", examId: "1", score: 80 },
-    { studentName: "Jane Smith", examId: "2", score: 95 }
+  submissions: [
+    { 
+      id: "sub1", 
+      studentName: "Test Student", 
+      examId: "1", 
+      score: 50, 
+      answers: { 
+        q1: 0, 
+        q2: 1, 
+        q5: "var is function-scoped while let and const are block-scoped." 
+      } 
+    },
+    { 
+      id: "sub2", 
+      studentName: "John Doe", 
+      examId: "1", 
+      score: 100, 
+      answers: { 
+        q1: 0, 
+        q2: 0, 
+        q5: "They are different variable declarations." 
+      } 
+    }
   ]
 };
 

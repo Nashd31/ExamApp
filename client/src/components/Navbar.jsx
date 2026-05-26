@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
@@ -27,18 +27,17 @@ const Navbar = () => {
                 >
                     <span className="navbar-toggler-icon"></span>
                 </button>
+
+                {user && (
+                            <div className="position-absolute top-50 start-50 translate-middle">
+                                <li className="nav-item nav-link text-light">
+                                    Hello, {user.name}
+                                </li>
+                            </div>
+                )}
+                
                 <div className="collapse navbar-collapse" id="navbarNav">
                     <ul className="navbar-nav ms-auto align-items-center gap-1">
-                        <li className="nav-item">
-                            <NavLink
-                                className={({ isActive }) =>
-                                    isActive ? 'nav-link active' : 'nav-link'
-                                }
-                                to="/"
-                            >
-                                Home
-                            </NavLink>
-                        </li>
                         {user?.role === 'teacher' && (
                             <li className="nav-item">
                                 <NavLink
@@ -64,34 +63,17 @@ const Navbar = () => {
                             </li>
                         )}
                         {!user && (
-                            <>
-                                <li className="nav-item">
-                                    <NavLink
-                                        className={({ isActive }) =>
-                                            isActive ? 'nav-link active' : 'nav-link'
-                                        }
-                                        to="/login"
-                                    >
-                                        Login
-                                    </NavLink>
-                                </li>
-                                <li className="nav-item">
-                                    <NavLink
-                                        className={({ isActive }) =>
-                                            isActive ? 'nav-link active' : 'nav-link'
-                                        }
-                                        to="/register"
-                                    >
-                                        Register
-                                    </NavLink>
-                                </li>
-                            </>
+                            <li className="nav-item">
+                                <Link
+                                    className="btn btn-outline-light ms-2"
+                                    to="/login"
+                                >
+                                    Login
+                                </Link>
+                            </li>
                         )}
                         {user && (
                             <>
-                                <li className="nav-item nav-link text-light">
-                                    Hello, {user.name}
-                                </li>
                                 <li className="nav-item">
                                     <button className="btn btn-outline-light ms-2" onClick={logout}>
                                         Logout

@@ -62,7 +62,9 @@ const TakeExam = () => {
                 try {
                     setSubmitted(true);
                     const score = await submitExam(exam.id, user?.name || 'Student', answers);
-                    showSuccess(`Time is up! Exam auto-submitted. Score: ${score}/100.`);
+                    const passGrade = exam.passGrade || 50;
+                    const status = score >= passGrade ? 'Passed' : 'Failed';
+                    showSuccess(`Time is up! Exam auto-submitted. Score: ${score}/100. Status: ${status}`);
                     navigate('/student');
                 } catch (err) {
                     showError(err?.message || 'Auto-submit failed.');
@@ -140,7 +142,9 @@ const TakeExam = () => {
 
         try {
             const score = await submitExam(exam.id, user?.name || 'Student', answers);
-            showSuccess(`Exam submitted successfully! Your score is ${score}/100.`);
+            const passGrade = exam.passGrade || 50;
+            const status = score >= passGrade ? 'Passed' : 'Failed';
+            showSuccess(`Exam submitted successfully! Your score is ${score}/100. Status: ${status}`);
             navigate('/student');
         } catch (err) {
             showError(err?.message || 'Failed to submit exam.');
