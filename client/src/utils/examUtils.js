@@ -1,9 +1,5 @@
-/**
- * Computes the dynamic status of an exam based on the current system time compared to its scheduled start and end dates.
- * 
- * @param {Object} exam - The exam object to check.
- * @returns {string} - 'Draft' | 'Scheduled' | 'Published' | 'Done'
- */
+
+// Computes the dynamic status of an exam based on the current system time compared to its scheduled start and end dates.
 export const getExamStatus = (exam) => {
   if (!exam || !exam.startDate || !exam.endDate) {
     return 'Draft';
@@ -22,12 +18,7 @@ export const getExamStatus = (exam) => {
   }
 };
 
-/**
- * Converts an ISO datetime string into the local `YYYY-MM-DDTHH:mm` format required by HTML5 `<input type="datetime-local">`.
- * 
- * @param {string} isoString - The ISO datetime string.
- * @returns {string} - The formatted datetime local string or empty string.
- */
+// Converts an ISO datetime string into the local `YYYY-MM-DDTHH:mm`.
 export const toDatetimeLocal = (isoString) => {
   if (!isoString) return '';
   const date = new Date(isoString);
@@ -43,12 +34,8 @@ export const toDatetimeLocal = (isoString) => {
   return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
 };
 
-/**
- * Formats an ISO datetime string into a user-friendly local date and time string.
- * 
- * @param {string} isoString - The ISO datetime string.
- * @returns {string} - The formatted string.
- */
+
+// Formats an ISO datetime string into a user-friendly local date and time string.
 export const formatDate = (isoString) => {
   if (!isoString) return 'N/A';
   const d = new Date(isoString);

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getExamById } from '../api/examService';
-import { getStudentSubmissions } from '../api/examService';
+import { getExamById, getStudentSubmissions } from '../api/examService';
 import { useAuth } from '../context/AuthContext';
 import { showError } from '../services/notify';
 import { getExamStatus } from '../utils/examUtils';

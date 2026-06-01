@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { getAllExams, createExam, updateExam, deleteExam, getExamSubmissions } from '../api/examService';
 import { useAuth } from '../context/AuthContext';
 import { showSuccess, showError } from '../services/notify';
@@ -12,7 +12,6 @@ import { getExamStatus, toDatetimeLocal, formatDate } from '../utils/examUtils';
  */
 const TeacherDashboard = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user } = useAuth();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -499,7 +498,7 @@ const TeacherDashboard = () => {
         </div>
         <div className="card-body px-5 py-4">
           <h5 className="card-title mb-1">Manage Exams</h5>
-          <p className="text-muted mb-4">Welcome back, {user?.name || 'Teacher'}. Use this dashboard to create, edit, and delete exams.</p>
+          <p className="text-muted mb-4">Welcome back, <strong>{user?.name || 'Teacher'}</strong>. Use this dashboard to manage exams, review student submissions, and publish grades.</p>
           {loading ? (
             <div className="text-center my-5">
               <div className="spinner-border text-primary" role="status">

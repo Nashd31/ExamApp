@@ -1,6 +1,7 @@
 import mockDb, { saveToStorage } from './mockDb';
+import config from '../services/config';
 
-const DELAY = 500;
+const DELAY = config.MOCK_API_DELAY;
 
 /**
  * Retrieves all exams from the mock database.
@@ -60,7 +61,6 @@ export const updateExam = (updatedExam) => {
       if (index !== -1) {
         mockDb.exams[index] = { ...updatedExam };
         saveToStorage(mockDb);
-        console.log('mockDb updated with exam:', mockDb.exams[index]);
         resolve({ ...updatedExam });
       } else {
         reject(new Error("Exam not found"));
