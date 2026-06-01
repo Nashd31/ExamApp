@@ -131,7 +131,8 @@ const defaultData = {
         q2: [1],
         q5: "var is function-scoped while let and const are block-scoped."
       },
-      manualGrades: {}
+      manualGrades: {},
+      submittedAt: "2026-05-01T10:45:00.000Z"
     },
     {
       id: "sub2",
@@ -143,7 +144,8 @@ const defaultData = {
         q2: [0],
         q5: "They are different variable declarations."
       },
-      manualGrades: {}
+      manualGrades: {},
+      submittedAt: "2026-05-01T11:15:00.000Z"
     }
   ]
 };

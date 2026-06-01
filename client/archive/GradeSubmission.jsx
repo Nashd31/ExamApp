@@ -99,7 +99,7 @@ const GradeSubmission = () => {
             <h3 className="mb-0">Grading: {exam.title}</h3>
             <small>Student: {submission.studentName}</small>
           </div>
-          <button className="btn btn-outline-light px-4" onClick={() => navigate(`/teacher/exam/${submission.examId}/scores`)}>Back to Scores</button>
+          <button className="btn btn-outline-light px-4" onClick={() => navigate('/teacher', { state: { viewScoresExamId: submission.examId } })}>Back to Scores</button>
         </div>
         <div className="card-body px-5 py-4">
           <h5 className="mb-4">Current Score: <strong>{submission.score}%</strong></h5>
