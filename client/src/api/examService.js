@@ -110,27 +110,28 @@ export const submitExam = (examId, studentName, studentAnswers) => {
         return;
       }
 
-      let correctCount = 0;
-      let gradableCount = 0;
-      
-      // Calculate grade only for multiple choice questions
+      let totalScore = 0;
+
+      // Calculate grade using point values
       questions.forEach((question, index) => {
         if (!question.type || question.type === 'multiple_choice') {
-          gradableCount += 1;
           const key = question.id || index;
-          const expected = question.answer;
+          const expected = question.correctAnswers;
           const given = studentAnswers[key];
-          
-          // Compare strict equality since options are indexed by number
-          if (typeof given === 'number' && given === expected) {
-            correctCount += 1;
+
+          if (Array.isArray(expected) && Array.isArray(given)) {
+            const isCorrect = expected.length === given.length && expected.every(val => given.includes(val));
+            if (isCorrect) {
+              totalScore += question.points || 0;
+            }
           }
         }
       });
 
-      const score = gradableCount > 0 ? Math.round((correctCount / gradableCount) * 100) : 0;
+      const score = Math.round(totalScore);
+
       mockDb.submissions = mockDb.submissions || [];
-      mockDb.submissions.push({ id: Date.now().toString(), studentName, examId, score, answers: studentAnswers });
+      mockDb.submissions.push({ id: Date.now().toString(), studentName, examId, score, answers: studentAnswers, manualGrades: {} });
       saveToStorage(mockDb);
       resolve(score);
     }, DELAY);
@@ -152,7 +153,8 @@ export const getStudentSubmissions = (studentName) => {
           examId: s.examId,
           title: exam.title || 'Unknown Exam',
           score: s.score,
-          passGrade: exam.passGrade || 50
+          passGrade: exam.passGrade || 50,
+          areGradesPublished: exam.areGradesPublished !== false
         };
       });
       resolve(results);
@@ -189,3 +191,56 @@ export const getStudentSubmission = (examId, studentName) => {
     }, DELAY);
   });
 };
+
+export const getSubmissionById = (submissionId) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const submission = (mockDb.submissions || []).find(s => s.id === submissionId);
+      if (submission) {
+        resolve({ ...submission });
+      } else {
+        reject(new Error("Submission not found"));
+      }
+    }, DELAY);
+  });
+};
+
+export const updateSubmissionGrade = (submissionId, questionId, points) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const submission = mockDb.submissions.find(s => s.id === submissionId);
+      if (!submission) {
+        return reject(new Error("Submission not found"));
+      }
+      submission.manualGrades = submission.manualGrades || {};
+      submission.manualGrades[questionId] = Number(points);
+
+      const exam = mockDb.exams.find(e => e.id === submission.examId);
+      if (exam) {
+        const questions = exam.questions || [];
+        let totalScore = 0;
+
+        questions.forEach((q, index) => {
+          const key = q.id || index;
+          if (submission.manualGrades[key] !== undefined) {
+            totalScore += submission.manualGrades[key];
+          } else {
+            if (!q.type || q.type === 'multiple_choice') {
+              const expected = q.correctAnswers;
+              const given = submission.answers[key];
+              if (Array.isArray(expected) && Array.isArray(given)) {
+                const isCorrect = expected.length === given.length && expected.every(val => given.includes(val));
+                if (isCorrect) totalScore += q.points || 0;
+              }
+            }
+          }
+        });
+        submission.score = Math.round(totalScore);
+      }
+
+      saveToStorage(mockDb);
+      resolve({ ...submission });
+    }, DELAY);
+  });
+};
+

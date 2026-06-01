@@ -29,6 +29,20 @@ const TakeExam = () => {
 
             try {
                 const data = await getExamById(id);
+                if (data.startDate && data.endDate) {
+                    const start = new Date(data.startDate);
+                    const end = new Date(data.endDate);
+                    const now = new Date();
+
+                    if (now < start) {
+                        setError('This exam is not available yet.');
+                        return;
+                    }
+                    if (now > end) {
+                        setError('This exam is not available.');
+                        return;
+                    }
+                }
                 setExam(data);
                 // initialize timer when exam loaded
                 const seconds = (data.duration && Number(data.duration) > 0) ? Number(data.duration) * 60 : 60 * 60;
@@ -47,8 +61,15 @@ const TakeExam = () => {
 
     // Manages the countdown timer, decrementing it every second.
     useEffect(() => {
-        if (timeLeft === null || submitted) return;
+        if (timeLeft === null || submitted || !exam) return;
         const tick = setInterval(() => {
+            // Check if current time has exceeded the exam's scheduled end date
+            if (exam.endDate && new Date() > new Date(exam.endDate)) {
+                clearInterval(tick);
+                setTimeLeft(0);
+                return;
+            }
+
             setTimeLeft(prev => {
                 if (prev === null) return prev;
                 if (prev <= 1) {
@@ -60,7 +81,7 @@ const TakeExam = () => {
         }, 1000);
 
         return () => clearInterval(tick);
-    }, [timeLeft, submitted]);
+    }, [timeLeft, submitted, exam]);
 
 
     // Automatically submits the exam when the countdown timer reaches zero.
@@ -69,10 +90,8 @@ const TakeExam = () => {
             const autoSubmit = async () => {
                 try {
                     setSubmitted(true);
-                    const score = await submitExam(exam.id, user?.name || 'Student', answers);
-                    const passGrade = exam.passGrade || 50;
-                    const status = score >= passGrade ? 'Passed' : 'Failed';
-                    showSuccess(`Time is up! Exam auto-submitted. Score: ${score}/100. Status: ${status}`);
+                    await submitExam(exam.id, user?.name || 'Student', answers);
+                    showSuccess('Time is up! Exam auto-submitted. Results will be available after your teacher publishes grades.');
                     navigate('/student');
                 } catch (err) {
                     showError(err?.message || 'Auto-submit failed.');
@@ -158,10 +177,8 @@ const TakeExam = () => {
         if (!confirmed) return;
 
         try {
-            const score = await submitExam(exam.id, user?.name || 'Student', answers);
-            const passGrade = exam.passGrade || 50;
-            const status = score >= passGrade ? 'Passed' : 'Failed';
-            showSuccess(`Exam submitted successfully! Your score is ${score}/100. Status: ${status}`);
+            await submitExam(exam.id, user?.name || 'Student', answers);
+            showSuccess('Exam submitted successfully! Your results will be available after the teacher publishes the grades.');
             navigate('/student');
         } catch (err) {
             showError(err?.message || 'Failed to submit exam.');
@@ -218,24 +235,48 @@ const TakeExam = () => {
                             <div key={questionKey} className="mb-4">
                                 <h5 className="mb-3">
                                     {index + 1}. {question.text}
+                                    <span className="badge bg-secondary ms-2">{question.points || 0} Points</span>
                                 </h5>
                                 {(!question.type || question.type === 'multiple_choice') ? (
-                                    question.options?.map((option, optionIndex) => (
-                                        <div className="form-check" key={optionIndex}>
-                                            <input
-                                                className="form-check-input"
-                                                type="radio"
-                                                name={`question-${questionKey}`}
-                                                id={`q-${questionKey}-opt-${optionIndex}`}
-                                                value={optionIndex}
-                                                checked={answers[questionKey] === optionIndex}
-                                                onChange={() => handleAnswerChange(questionKey, optionIndex)}
-                                            />
-                                            <label className="form-check-label" htmlFor={`q-${questionKey}-opt-${optionIndex}`}>
-                                                {option}
-                                            </label>
-                                        </div>
-                                    ))
+                                    <>
+                                        <p className="small text-muted mb-2">
+                                            {question.allowMultipleAnswers ? 'Multiple answers question.' : 'Single answer question.'}
+                                        </p>
+                                        {question.options?.map((option, optionIndex) => {
+                                            const selectedAnswers = answers[questionKey] || [];
+                                            const isChecked = selectedAnswers.includes(optionIndex);
+                                            const isMulti = question.allowMultipleAnswers;
+                                            return (
+                                                <div className="form-check" key={optionIndex}>
+                                                    <input
+                                                        className="form-check-input"
+                                                        type={isMulti ? 'checkbox' : 'radio'}
+                                                        name={`question-${questionKey}`}
+                                                        id={`q-${questionKey}-opt-${optionIndex}`}
+                                                        value={optionIndex}
+                                                        checked={isChecked}
+                                                        onChange={(e) => {
+                                                            const currentAnswers = answers[questionKey] || [];
+                                                            let newAnswers = [];
+                                                            if (isMulti) {
+                                                                if (e.target.checked) {
+                                                                    newAnswers = [...currentAnswers, optionIndex];
+                                                                } else {
+                                                                    newAnswers = currentAnswers.filter(a => a !== optionIndex);
+                                                                }
+                                                            } else {
+                                                                newAnswers = [optionIndex];
+                                                            }
+                                                            handleAnswerChange(questionKey, newAnswers);
+                                                        }}
+                                                    />
+                                                    <label className="form-check-label" htmlFor={`q-${questionKey}-opt-${optionIndex}`}>
+                                                        {option}
+                                                    </label>
+                                                </div>
+                                            )
+                                        })}
+                                    </>
                                 ) : (
                                     <textarea
                                         className="form-control"
