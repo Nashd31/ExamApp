@@ -1,7 +1,11 @@
-import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
+/**
+ * A wrapper component that guards routes requiring authentication.
+ * Redirects unauthenticated users to the login page.
+ * If an `allowedRole` is specified, redirects users without the correct role to the home page.
+ */
 const ProtectedRoute = ({ children, allowedRole }) => {
     const { user } = useAuth();
 

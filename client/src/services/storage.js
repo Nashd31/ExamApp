@@ -6,8 +6,12 @@
 import { logInfo, logError } from './logger';
 import config from './config';
 
+
+// Prepends a predefined application prefix to a storage key to prevent collisions.
 const prefixKey = (key) => `${config.STORAGE_PREFIX}${key}`;
 
+
+// Safely serializes and saves an item to localStorage.
 const setItem = (key, value) => {
     try {
         const serialized = JSON.stringify(value);
@@ -20,6 +24,7 @@ const setItem = (key, value) => {
     }
 };
 
+// Safely retrieves and deserializes an item from localStorage.
 const getItem = (key) => {
     try {
         const serialized = localStorage.getItem(prefixKey(key));
@@ -35,6 +40,7 @@ const getItem = (key) => {
     }
 };
 
+// Removes an item from localStorage.
 const removeItem = (key) => {
     try {
         localStorage.removeItem(prefixKey(key));
@@ -46,6 +52,8 @@ const removeItem = (key) => {
     }
 };
 
+
+// Clears all storage items that belong to this application (matching the predefined prefix).
 const clear = () => {
     try {
         const keys = Object.keys(localStorage);

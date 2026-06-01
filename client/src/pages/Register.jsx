@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { showError } from '../services/notify';
 
+/**
+ * Renders the user registration page.
+ * Allows new users to create an account and assigns them a specified role.
+ */
 const Register = () => {
     const { register } = useAuth();
     const navigate = useNavigate();
@@ -11,6 +15,10 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('student');
 
+    /**
+     * Handles the registration form submission.
+     * Registers the user, logs them in, and navigates based on their role.
+     */
     const handleSubmit = async (event) => {
         event.preventDefault();
 

@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getExamById, getStudentSubmission } from '../api/examService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { showError } from '../services/notify';
 
+/**
+ * ReviewExam Component
+ * Displays a detailed review of a student's exam submission, including correct and incorrect answers.
+ * It is used by both students (to review their own exams) and teachers (to review specific students).
+ */
 const ReviewExam = () => {
   const { id, studentName } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   const [exam, setExam] = useState(null);
   const [submission, setSubmission] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +21,10 @@ const ReviewExam = () => {
   // If a teacher provides a specific studentName in the URL, use that. Otherwise, default to the logged-in student.
   const targetStudent = studentName || user.name;
 
+  /**
+   * Fetches both the exam details and the specific student's submission in parallel.
+   * Handles loading states and error notifications if the fetch fails.
+   */
   useEffect(() => {
     const fetchReviewData = async () => {
       try {
@@ -34,9 +43,13 @@ const ReviewExam = () => {
     fetchReviewData();
   }, [id, targetStudent]);
 
+  /**
+   * Navigates the user back to their respective dashboard based on their role.
+   * Teachers return to the specific exam's scores view, students return to the main student portal.
+   */
   const handleBack = () => {
     if (user.role === 'teacher') {
-      navigate('/teacher', { state: { returnToScoresFor: id } });
+      navigate(`/teacher/exam/${id}/scores`);
     } else {
       navigate('/student');
     }
@@ -78,16 +91,35 @@ const ReviewExam = () => {
         </div>
         <div className="card-body p-4 p-md-5">
           {exam.questions.map((q, qIndex) => {
+            // Retrieve the specific answer the student provided for this question
             const studentAnswer = submission.answers[q.id || qIndex];
-            const isCorrect = studentAnswer === q.answer;
-            
+            const key = q.id || qIndex;
+            let earnedPoints = 0;
+            if (submission.manualGrades && submission.manualGrades[key] !== undefined) {
+              earnedPoints = submission.manualGrades[key];
+            } else if (!q.type || q.type === 'multiple_choice') {
+              const expected = q.correctAnswers || [];
+              const given = submission.answers[key] || [];
+              if (Array.isArray(expected) && Array.isArray(given)) {
+                const isCorrect = expected.length === given.length && expected.every(val => given.includes(val));
+                earnedPoints = isCorrect ? (q.points || 0) : 0;
+              }
+            }
+
             return (
               <div key={q.id || qIndex} className="card mb-4 border-secondary rounded-4">
                 <div className="card-body bg-light rounded-4 p-4">
-                  <h5 className="mb-3">
-                    <span className="badge bg-secondary me-2">Q{qIndex + 1}</span>
-                    {q.text}
-                  </h5>
+                  <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                    <h5 className="mb-0">
+                      <span className="badge bg-secondary me-2">Q{qIndex + 1}</span>
+                      {q.text}
+                    </h5>
+                    <div>
+                      <span className={`badge ${earnedPoints === q.points ? 'bg-success' : earnedPoints > 0 ? 'bg-warning text-dark' : 'bg-danger'}`}>
+                        Score: {earnedPoints} / {q.points}
+                      </span>
+                    </div>
+                  </div>
 
                   {(!q.type || q.type === 'multiple_choice') ? (
                     <div className="ps-3">
@@ -95,16 +127,20 @@ const ReviewExam = () => {
                         let textClass = 'text-dark';
                         let icon = '';
                         let bgColor = '';
+                        const correctAnswers = Array.isArray(q.correctAnswers) ? q.correctAnswers : [q.answer].filter((v) => v !== undefined);
+                        const selectedAnswers = Array.isArray(studentAnswer) ? studentAnswer : (studentAnswer !== undefined ? [studentAnswer] : []);
+                        const isCorrectOption = correctAnswers.includes(oIndex);
+                        const isSelectedOption = selectedAnswers.includes(oIndex);
 
-                        if (oIndex === q.answer && oIndex === studentAnswer) {
+                        if (isCorrectOption && isSelectedOption) {
                           textClass = 'text-success fw-bold';
                           icon = ' ✓';
                           bgColor = 'bg-success-subtle';
-                        } else if (oIndex === q.answer && oIndex !== studentAnswer) {
+                        } else if (isCorrectOption) {
                           textClass = 'text-success fw-bold';
                           icon = ' (Correct Answer)';
                           bgColor = 'bg-success-subtle';
-                        } else if (oIndex === studentAnswer && oIndex !== q.answer) {
+                        } else if (isSelectedOption) {
                           textClass = 'text-danger fw-bold';
                           icon = ' ✗ (Your Answer)';
                           bgColor = 'bg-danger-subtle';
@@ -113,9 +149,9 @@ const ReviewExam = () => {
                         return (
                           <div key={oIndex} className={`form-check mb-2 p-2 rounded ${bgColor}`}>
                             <input
-                              type="radio"
+                              type="checkbox"
                               className="form-check-input"
-                              checked={studentAnswer === oIndex}
+                              checked={isSelectedOption}
                               readOnly
                               disabled
                             />

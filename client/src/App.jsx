@@ -1,10 +1,11 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentPortal from './pages/StudentPortal';
 import TakeExam from './pages/TakeExam';
 import ReviewExam from './pages/ReviewExam';
+import GradeSubmission from './pages/GradeSubmission';
+import ExamScores from './pages/ExamScores';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
@@ -12,6 +13,8 @@ import { AuthProvider } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
+
+// Renders the landing page content with a welcome message and basic instructions.
 const Home = () => (
   <div className="text-center py-5">
     <h1 className="display-4">Welcome to E-Test System</h1>
@@ -32,6 +35,11 @@ const Home = () => (
   </div>
 );
 
+/**
+ * The main Application component.
+ * Configures React Router, sets up global context providers (AuthProvider),
+ * and defines the main layout and route mapping for the application.
+ */
 function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
@@ -68,6 +76,22 @@ function App() {
                     element={
                       <ProtectedRoute allowedRole="teacher">
                         <TeacherDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/teacher/exam/:examId/scores"
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <ExamScores />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/grade/:submissionId"
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <GradeSubmission />
                       </ProtectedRoute>
                     }
                   />

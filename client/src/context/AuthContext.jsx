@@ -1,15 +1,21 @@
-import React, { createContext, useContext, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as authLogin, register as authRegister } from '../services/authService';
 import { getItem, setItem, removeItem } from '../services/storage';
 import { logError } from '../services/logger';
+import { AuthContext } from '../hooks/useAuth';
 
-const AuthContext = createContext(null);
-
+/**
+ * Provides authentication state and methods (login, register, logout) to the component tree.
+ * Initializes user state from local storage.
+ */
 export const AuthProvider = ({ children }) => {
     const navigate = useNavigate();
+    // Initialize user state from persistent storage
     const [user, setUser] = useState(() => getItem('user'));
 
+
+    // Authenticates a user and updates global state and storage.
     const login = async (email, password) => {
         try {
             const userData = await authLogin(email, password);
@@ -22,6 +28,8 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+
+    // Registers a new user and automatically logs them in.
     const register = async (name, email, password, role) => {
         try {
             const userData = await authRegister(name, email, password, role);
@@ -34,6 +42,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Clears user session from state and storage, then redirects to login.
     const logout = () => {
         removeItem('user');
         setUser(null);
@@ -45,12 +54,4 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     );
-};
-
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within AuthProvider');
-    }
-    return context;
 };
