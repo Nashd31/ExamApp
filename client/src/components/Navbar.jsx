@@ -1,6 +1,5 @@
-import React from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 /**
  * Main navigation bar component.
@@ -35,17 +34,22 @@ const Navbar = () => {
                 </button>
 
                 {user && (
-                            <div className="position-absolute top-50 start-50 translate-middle">
-                                <li className="nav-item nav-link text-light">
-                                    Hello, {user.name}
-                                </li>
-                            </div>
+                    <div className="position-absolute top-50 start-50 translate-middle d-none d-lg-block">
+                        <span className="navbar-text text-light">
+                            Hello, {user.name}
+                        </span>
+                    </div>
                 )}
                 
                 <div className="collapse navbar-collapse" id="navbarNav">
                     <ul className="navbar-nav ms-auto align-items-center gap-1">
+                        {user && (
+                            <li className="nav-item d-block d-lg-none text-light my-2">
+                                Hello, {user.name}
+                            </li>
+                        )}
                         {user?.role === 'teacher' && (
-                            <li className="nav-item">
+                            <li className="nav-item mb-2">
                                 <NavLink
                                     className={({ isActive }) =>
                                         isActive ? 'nav-link active' : 'nav-link'

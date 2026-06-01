@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getSubmissionById, getExamById, updateSubmissionGrade } from '../api/examService';
 import { showSuccess, showError } from '../services/notify';

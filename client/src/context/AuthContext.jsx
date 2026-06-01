@@ -1,10 +1,9 @@
-import React, { createContext, useContext, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as authLogin, register as authRegister } from '../services/authService';
 import { getItem, setItem, removeItem } from '../services/storage';
 import { logError } from '../services/logger';
-
-const AuthContext = createContext(null);
+import { AuthContext } from '../hooks/useAuth';
 
 /**
  * Provides authentication state and methods (login, register, logout) to the component tree.
@@ -15,7 +14,7 @@ export const AuthProvider = ({ children }) => {
     // Initialize user state from persistent storage
     const [user, setUser] = useState(() => getItem('user'));
 
-    
+
     // Authenticates a user and updates global state and storage.
     const login = async (email, password) => {
         try {
@@ -29,7 +28,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    
+
     // Registers a new user and automatically logs them in.
     const register = async (name, email, password, role) => {
         try {
@@ -55,16 +54,4 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     );
-};
-
-/**
- * Custom hook to consume the AuthContext.
- * Ensures the hook is used within an AuthProvider hierarchy.
- */
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within AuthProvider');
-    }
-    return context;
 };

@@ -1,10 +1,15 @@
 import mockDb, { saveToStorage } from '../api/mockDb.js';
+import config from './config.js';
 
-const DELAY = 500;
+const DELAY = config.MOCK_API_DELAY;
 
 
 // Utility function to strip the password from a user object before returning it.
-const omitPassword = ({ password, ...user }) => user;
+const omitPassword = (user) => {
+    const userCopy = { ...user };
+    delete userCopy.password;
+    return userCopy;
+};
 
 
 // Simulates an API call to authenticate a user with their email and password.

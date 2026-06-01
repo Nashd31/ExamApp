@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAllExams, createExam, updateExam, deleteExam, getExamSubmissions } from '../api/examService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { showSuccess, showError } from '../services/notify';
 import { getExamStatus, toDatetimeLocal, formatDate } from '../utils/examUtils';
 
@@ -12,7 +12,6 @@ import { getExamStatus, toDatetimeLocal, formatDate } from '../utils/examUtils';
  */
 const TeacherDashboard = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user } = useAuth();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +20,6 @@ const TeacherDashboard = () => {
   const [error, setError] = useState('');
   // Fetches all exams from the server and updates local state.
   const fetchExams = async () => {
-    setLoading(true);
     try {
       const data = await getAllExams();
       setExams(data);
@@ -32,7 +30,7 @@ const TeacherDashboard = () => {
         try {
           const subs = await getExamSubmissions(exam.id);
           counts[exam.id] = subs.length;
-        } catch (err) {
+        } catch {
           counts[exam.id] = 0;
         }
       }
@@ -46,7 +44,10 @@ const TeacherDashboard = () => {
 
   // Initial load of all exams when the component mounts
   useEffect(() => {
-    fetchExams();
+    const init = async () => {
+      await fetchExams();
+    };
+    init();
   }, []);
 
 
@@ -70,12 +71,14 @@ const TeacherDashboard = () => {
     }
 
     try {
+      setLoading(true);
       const updated = { ...exam, areGradesPublished: !exam.areGradesPublished };
       await updateExam(updated);
       showSuccess(`Grades ${updated.areGradesPublished ? 'published' : 'unpublished'} successfully.`);
       fetchExams();
     } catch (error) {
       showError('Failed to toggle grades publish status: ' + (error.message || error));
+      setLoading(false);
     }
   };
 
@@ -238,7 +241,8 @@ const TeacherDashboard = () => {
     try {
       let savedExam;
       if (editingExam.isNew || !editingExam.id) {
-        const { isNew, ...newExamData } = editingExam;
+        const newExamData = { ...editingExam };
+        delete newExamData.isNew;
         savedExam = await createExam(newExamData);
         setExams([...exams, savedExam]);
       } else {
@@ -499,7 +503,7 @@ const TeacherDashboard = () => {
         </div>
         <div className="card-body px-5 py-4">
           <h5 className="card-title mb-1">Manage Exams</h5>
-          <p className="text-muted mb-4">Welcome back, {user?.name || 'Teacher'}. Use this dashboard to create, edit, and delete exams.</p>
+          <p className="text-muted mb-4">Welcome back, <strong>{user?.name || 'Teacher'}</strong>. Use this dashboard to manage exams, review student submissions, and publish grades.</p>
           {loading ? (
             <div className="text-center my-5">
               <div className="spinner-border text-primary" role="status">

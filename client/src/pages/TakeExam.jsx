@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { getExamById, submitExam } from '../api/examService';
 import { showSuccess, showError } from '../services/notify';
 
@@ -257,7 +257,7 @@ const TakeExam = () => {
                                                         checked={isChecked}
                                                         onChange={(e) => {
                                                             const currentAnswers = answers[questionKey] || [];
-                                                            let newAnswers = [];
+                                                            let newAnswers;
                                                             if (isMulti) {
                                                                 if (e.target.checked) {
                                                                     newAnswers = [...currentAnswers, optionIndex];

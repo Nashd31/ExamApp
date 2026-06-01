@@ -1,4 +1,4 @@
-// זה מידע זמני לשם הדגמה
+import { logError } from '../services/logger.js';
 
 /**
  * Attempts to load the mock database from localStorage.
@@ -37,7 +37,7 @@ const loadFromStorage = () => {
     }
     return null;
   } catch (error) {
-    console.error('Error loading from localStorage:', error);
+    logError('Error loading from localStorage:', error.message || error);
     return null;
   }
 };
@@ -50,7 +50,7 @@ export const saveToStorage = (data) => {
   try {
     localStorage.setItem('examApp_mockDb', JSON.stringify(data));
   } catch (error) {
-    console.error('Error saving to localStorage:', error);
+    logError('Error saving to localStorage:', error.message || error);
   }
 };
 
