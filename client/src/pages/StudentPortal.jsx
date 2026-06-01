@@ -4,6 +4,7 @@ import { getExamById } from '../api/examService';
 import { getStudentSubmissions } from '../api/examService';
 import { useAuth } from '../context/AuthContext';
 import { showError } from '../services/notify';
+import { getExamStatus } from '../utils/examUtils';
 
 /**
  * Renders the Student Portal dashboard.
@@ -19,6 +20,7 @@ const StudentPortal = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [pastExams, setPastExams] = useState([]);
+  const [loadingPast, setLoadingPast] = useState(true);
 
   /**
    * Fetches the details of an exam based on the provided exam ID.
@@ -32,17 +34,19 @@ const StudentPortal = () => {
     setExam(null);
     try {
       const data = await getExamById(examId);
-      if (data && !data.isPublished) {
-        const message = 'This exam is not yet published.';
+      const status = getExamStatus(data);
+      if (status === 'Scheduled') {
+        const message = 'This exam is not available yet.';
         setError(message);
-        showError(message);
-      } else {
+      } else if (status === 'Published') {
         setExam(data);
+      } else {
+        const message = 'This exam is not available.';
+        setError(message);
       }
     } catch (err) {
       const message = err?.message || 'Unable to find exam.';
       setError(message);
-      showError(message);
     } finally {
       setLoading(false);
     }
@@ -52,12 +56,18 @@ const StudentPortal = () => {
   // Loads the current student's past exam submissions on component mount.
   useEffect(() => {
     const loadPast = async () => {
-      if (!user?.name) return;
+      if (!user?.name) {
+        setLoadingPast(false);
+        return;
+      }
+      setLoadingPast(true);
       try {
         const data = await getStudentSubmissions(user.name);
         setPastExams(data || []);
       } catch (err) {
         showError(err?.message || 'Failed to load past exams');
+      } finally {
+        setLoadingPast(false);
       }
     };
     loadPast();
@@ -92,17 +102,26 @@ const StudentPortal = () => {
 
           {error && <div className="alert alert-danger">{error}</div>}
 
-          {exam && (
-            <div className="mt-4 p-3 border rounded bg-light">
-              <h6>Exam: <span className="text-primary">{exam.title}</span></h6>
-              <p>Questions available: {exam.questions.length}</p>
-              <button
-                className="btn btn-warning w-100"
-                onClick={() => navigate(`/take-exam/${exam.id}`)}
-              >
-                Begin Now
-              </button>
+          {loading ? (
+            <div className="text-center my-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-2">Searching for exam...</p>
             </div>
+          ) : (
+            exam && (
+              <div className="mt-4 p-3 border rounded bg-light">
+                <h6>Exam: <span className="text-primary">{exam.title}</span></h6>
+                <p>Questions available: {exam.questions.length}</p>
+                <button
+                  className="btn btn-warning w-100"
+                  onClick={() => navigate(`/take-exam/${exam.id}`)}
+                >
+                  Begin Now
+                </button>
+              </div>
+            )
           )}
         </div>
       </div>
@@ -112,7 +131,14 @@ const StudentPortal = () => {
           <h5 className="mb-0">My Past Exams</h5>
         </div>
         <div className="card-body px-4 py-3">
-          {pastExams.length === 0 ? (
+          {loadingPast ? (
+            <div className="text-center my-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-2">Loading past exams...</p>
+            </div>
+          ) : pastExams.length === 0 ? (
             <p className="text-muted">No past exams found.</p>
           ) : (
             <div className="table-responsive">
@@ -129,21 +155,31 @@ const StudentPortal = () => {
                   {pastExams.map((p) => (
                     <tr key={p.examId}>
                       <td>{p.title}</td>
-                      <td>{p.score}%</td>
                       <td>
-                        {p.score >= p.passGrade ? (
+                        {p.areGradesPublished === false ? (
+                          <span className="text-warning">Pending Teacher Review</span>
+                        ) : (
+                          `${p.score}%`
+                        )}
+                      </td>
+                      <td>
+                        {p.areGradesPublished === false ? (
+                          <span className="badge bg-secondary">Pending</span>
+                        ) : p.score >= p.passGrade ? (
                           <span className="badge bg-success">Passed</span>
                         ) : (
                           <span className="badge bg-danger">Failed</span>
                         )}
                       </td>
                       <td>
-                        <button
-                          className="btn btn-sm btn-outline-info"
-                          onClick={() => navigate(`/review-exam/${p.examId}`)}
-                        >
-                          Review
-                        </button>
+                        {p.areGradesPublished !== false && (
+                          <button
+                            className="btn btn-sm btn-outline-info"
+                            onClick={() => navigate(`/review-exam/${p.examId}`)}
+                          >
+                            Review
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

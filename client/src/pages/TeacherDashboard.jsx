@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { getAllExams, createExam, updateExam, deleteExam, getExamSubmissions } from '../api/examService';
 import { useAuth } from '../context/AuthContext';
 import { showSuccess, showError } from '../services/notify';
+import { getExamStatus, toDatetimeLocal, formatDate } from '../utils/examUtils';
 
 /**
  * TeacherDashboard Component
@@ -16,16 +17,26 @@ const TeacherDashboard = () => {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingExam, setEditingExam] = useState(null);
-  const [viewingScoresFor, setViewingScoresFor] = useState(null);
-  const [examSubmissions, setExamSubmissions] = useState([]);
-
-
+  const [submissionCounts, setSubmissionCounts] = useState({});
+  const [error, setError] = useState('');
   // Fetches all exams from the server and updates local state.
   const fetchExams = async () => {
     setLoading(true);
     try {
       const data = await getAllExams();
       setExams(data);
+
+      // Fetch submission counts for each exam
+      const counts = {};
+      for (const exam of data) {
+        try {
+          const subs = await getExamSubmissions(exam.id);
+          counts[exam.id] = subs.length;
+        } catch (err) {
+          counts[exam.id] = 0;
+        }
+      }
+      setSubmissionCounts(counts);
     } catch (error) {
       showError('Error fetching exams: ' + (error.message || error));
     } finally {
@@ -38,53 +49,38 @@ const TeacherDashboard = () => {
     fetchExams();
   }, []);
 
-  /**
-   * Effect to handle automatic navigation back to a specific exam's scores view.
-   * Commonly triggered when returning from a specific student's exam review page.
-   */
-  useEffect(() => {
-    if (exams.length > 0 && location.state?.returnToScoresFor) {
-      const examId = location.state.returnToScoresFor;
-      const exam = exams.find(e => e.id === examId);
-      if (exam) {
-        handleViewScores(exam);
-      }
-      // Clear location state to prevent infinite loops on reload
-      navigate('/teacher', { replace: true, state: {} });
-    }
-  }, [exams, location.state, navigate]);
+
 
   // Prepares an exam for editing by creating a deep copy to avoid mutating the original state directly.
   const handleEditClick = (exam) => {
+    setError('');
     setEditingExam(JSON.parse(JSON.stringify(exam)));
   };
 
-  /**
-   * Toggles the published status of an exam. 
-   * A published exam becomes visible to students to take.
-   */
-  const handleTogglePublish = async (exam) => {
+  const handleTogglePublishGrades = async (exam) => {
+    // Validate: exam must be completed and have submissions
+    const status = getExamStatus(exam);
+    if (status !== 'Done') {
+      showError('Grades can only be published once the exam has acomplished.');
+      return;
+    }
+    if (submissionCounts[exam.id] === 0) {
+      showError('Cannot publish grades - no student submissions yet.');
+      return;
+    }
+
     try {
-      const updated = { ...exam, isPublished: !exam.isPublished };
+      const updated = { ...exam, areGradesPublished: !exam.areGradesPublished };
       await updateExam(updated);
-      showSuccess(`Exam ${updated.isPublished ? 'published' : 'unpublished'} successfully.`);
+      showSuccess(`Grades ${updated.areGradesPublished ? 'published' : 'unpublished'} successfully.`);
       fetchExams();
     } catch (error) {
-      showError('Failed to toggle publish status: ' + (error.message || error));
+      showError('Failed to toggle grades publish status: ' + (error.message || error));
     }
   };
 
 
-  // Fetches and displays all student submissions for a specific exam.
-  const handleViewScores = async (exam) => {
-    setViewingScoresFor(exam);
-    try {
-      const subs = await getExamSubmissions(exam.id);
-      setExamSubmissions(subs);
-    } catch (error) {
-      showError('Failed to fetch scores: ' + (error.message || error));
-    }
-  };
+
 
   // Updates the title of the exam currently being edited.
   const handleTitleChange = (e) => {
@@ -99,14 +95,14 @@ const TeacherDashboard = () => {
   };
 
   // Updates the text of a specific option within a multiple-choice question.
-  
+
   const handleOptionChange = (qIndex, oIndex, value) => {
     const updatedQuestions = [...editingExam.questions];
     updatedQuestions[qIndex].options[oIndex] = value;
     setEditingExam({ ...editingExam, questions: updatedQuestions });
   };
 
-  
+
   // Appends a new blank option to a multiple-choice question.
   const handleAddOption = (qIndex) => {
     const updatedQuestions = [...editingExam.questions];
@@ -122,12 +118,12 @@ const TeacherDashboard = () => {
     const updatedQuestions = [...editingExam.questions];
     if (updatedQuestions[qIndex].options.length > 2) {
       updatedQuestions[qIndex].options.splice(oIndex, 1);
-      // Adjust the selected correct answer to ensure validity
-      if (updatedQuestions[qIndex].answer === oIndex) {
-        updatedQuestions[qIndex].answer = 0;
-      } else if (updatedQuestions[qIndex].answer > oIndex) {
-        updatedQuestions[qIndex].answer -= 1;
-      }
+      // Adjust the selected correct answers to ensure validity
+      const oldAnswers = updatedQuestions[qIndex].correctAnswers || [];
+      const newAnswers = oldAnswers
+        .filter(ans => ans !== oIndex)
+        .map(ans => ans > oIndex ? ans - 1 : ans);
+      updatedQuestions[qIndex].correctAnswers = newAnswers.length > 0 ? newAnswers : [0];
       setEditingExam({ ...editingExam, questions: updatedQuestions });
     }
   };
@@ -139,9 +135,12 @@ const TeacherDashboard = () => {
       id: `q${Date.now()}`,
       text: 'New Question',
       type: 'multiple_choice',
+      allowMultipleAnswers: false,
       options: ['Option 1', 'Option 2'],
-      answer: 0
+      correctAnswers: [0],
+      points: 10
     };
+
     setEditingExam({
       ...editingExam,
       questions: [...editingExam.questions, newQuestion]
@@ -157,17 +156,23 @@ const TeacherDashboard = () => {
 
   // Initializes a new, empty exam template and sets it as the active editing exam.
   const handleCreateClick = () => {
+    setError('');
     setEditingExam({
       title: 'New Exam',
       duration: 60,
       passGrade: 50,
-      isPublished: false,
+      startDate: '',
+      endDate: '',
+      areGradesPublished: false,
       questions: [
         {
           id: `q${Date.now()}`,
+          type: 'multiple_choice',
           text: 'New Question',
+          allowMultipleAnswers: false,
           options: ['Option 1', 'Option 2'],
-          answer: 0
+          correctAnswers: [0],
+          points: 10
         }
       ],
       isNew: true
@@ -192,6 +197,44 @@ const TeacherDashboard = () => {
 
   // Persists the currently edited exam (either creating a new one or updating an existing one).
   const handleSave = async () => {
+    setError('');
+    if (!editingExam.startDate || !editingExam.endDate) {
+      setError('Start date and End date are required.');
+      return;
+    }
+
+    const start = new Date(editingExam.startDate);
+    const end = new Date(editingExam.endDate);
+    const now = new Date();
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      setError('Invalid start or end date.');
+      return;
+    }
+
+    if (end <= start) {
+      setError('End date must be strictly after the start date.');
+      return;
+    }
+
+    // Start time cannot be in the past (with a 1-minute grace buffer for completion lag)
+    if (start.getTime() < now.getTime() - 60000) {
+      setError('Start time cannot be before the current time.');
+      return;
+    }
+
+    // Check if trying to edit an active or completed exam (except when creating)
+    if (!editingExam.isNew && editingExam.id) {
+      const originalExam = exams.find(e => e.id === editingExam.id);
+      if (originalExam) {
+        const origStatus = getExamStatus(originalExam);
+        if (origStatus === 'Published' || origStatus === 'Done') {
+          setError('Cannot edit an exam that is currently active or completed.');
+          return;
+        }
+      }
+    }
+
     try {
       let savedExam;
       if (editingExam.isNew || !editingExam.id) {
@@ -206,66 +249,14 @@ const TeacherDashboard = () => {
       }
 
       setEditingExam(null);
-      showSuccess('Exam saved successfully.');
-    } catch (error) {
-      showError('Failed to save: ' + (error.message || error));
+      setError('');
+      showSuccess('Exam: "' + savedExam.title + '" saved successfully.');
+    } catch (err) {
+      setError('Failed to save: ' + (err.message || err));
     }
   };
 
-  // Render view: Viewing scores for a specific exam
-  if (viewingScoresFor) {
-    return (
-      <div className="container mt-4 mb-5">
-        <div className="card shadow rounded-4">
-          <div className="card-header bg-info text-white d-flex justify-content-between align-items-center p-4 rounded-top-4">
-            <h3>Scores for: {viewingScoresFor.title}</h3>
-            <button className="btn btn-outline-light px-4" onClick={() => setViewingScoresFor(null)}>Back to Exams</button>
-          </div>
-          <div className="card-body px-5 py-4">
-            {examSubmissions.length === 0 ? (
-              <p className="text-muted text-center">No submissions found for this exam.</p>
-            ) : (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Student Name</th>
-                      <th>Score</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {examSubmissions.map((sub, idx) => (
-                      <tr key={idx}>
-                        <td>{sub.studentName}</td>
-                        <td>{sub.score}%</td>
-                        <td>
-                          {sub.score >= (viewingScoresFor.passGrade || 50) ? (
-                            <span className="badge bg-success">Passed</span>
-                          ) : (
-                            <span className="badge bg-danger">Failed</span>
-                          )}
-                        </td>
-                        <td>
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => navigate(`/teacher/review-exam/${viewingScoresFor.id}/${sub.studentName}`)}
-                          >
-                            Review
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   // Render view: Creating or editing an exam
   if (editingExam) {
@@ -274,7 +265,7 @@ const TeacherDashboard = () => {
         <div className="card shadow rounded-4">
           <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center p-4 rounded-top-4">
             <h3>{editingExam.isNew ? 'Creating New Exam:' : 'Editing Exam:'} {editingExam.title}</h3>
-            <button className="btn btn-outline-light px-4" onClick={() => setEditingExam(null)}>Back to List</button>
+            <button className="btn btn-outline-light px-4" onClick={() => { setEditingExam(null); setError(''); }}>Back to List</button>
           </div>
           <div className="card-body px-5 py-4">
             <div className="mb-4">
@@ -285,9 +276,9 @@ const TeacherDashboard = () => {
                 onChange={handleTitleChange}
               />
             </div>
-            <div className="mb-4 row">
-              <div className="col-md-6">
-                <label className="form-label mb-2">Duration (minutes)</label>
+            <div className="row g-3 mb-4">
+              <div className="col-md-3 col-sm-6">
+                <label className="form-label mb-2">Duration (mins)</label>
                 <input
                   type="number"
                   min={1}
@@ -296,7 +287,7 @@ const TeacherDashboard = () => {
                   onChange={(e) => setEditingExam({ ...editingExam, duration: Number(e.target.value) })}
                 />
               </div>
-              <div className="col-md-6 mt-3 mt-md-0">
+              <div className="col-md-3 col-sm-6">
                 <label className="form-label mb-2">Pass Grade (%)</label>
                 <input
                   type="number"
@@ -307,7 +298,47 @@ const TeacherDashboard = () => {
                   onChange={(e) => setEditingExam({ ...editingExam, passGrade: Number(e.target.value) })}
                 />
               </div>
+              <div className="col-md-3 col-sm-6">
+                <label className="form-label mb-2">Start Date & Time</label>
+                <input
+                  type="datetime-local"
+                  className="form-control"
+                  value={toDatetimeLocal(editingExam.startDate)}
+                  onChange={(e) => setEditingExam({
+                    ...editingExam,
+                    startDate: e.target.value ? new Date(e.target.value).toISOString() : ''
+                  })}
+                />
+              </div>
+              <div className="col-md-3 col-sm-6">
+                <label className="form-label mb-2">End Date & Time</label>
+                <input
+                  type="datetime-local"
+                  className="form-control"
+                  value={toDatetimeLocal(editingExam.endDate)}
+                  onChange={(e) => setEditingExam({
+                    ...editingExam,
+                    endDate: e.target.value ? new Date(e.target.value).toISOString() : ''
+                  })}
+                />
+              </div>
             </div>
+
+            {(() => {
+              const totalPoints = editingExam.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0);
+              const pointsStatus = totalPoints === 100 ? 'success' : 'danger';
+              const pointsMessage = totalPoints === 100
+                ? 'Total points: 100 ✓'
+                : totalPoints > 100
+                  ? `Total points: ${totalPoints} (${totalPoints - 100} points over limit)`
+                  : `Total points: ${totalPoints} (${100 - totalPoints} points remaining)`;
+
+              return (
+                <div className={`alert alert-${pointsStatus} mb-4`}>
+                  <strong>{pointsMessage}</strong>
+                </div>
+              );
+            })()}
 
             <h5 className="border-bottom pb-2 mb-3">Questions</h5>
             {editingExam.questions.map((q, qIndex) => (
@@ -328,32 +359,78 @@ const TeacherDashboard = () => {
                       className="form-select w-auto"
                       value={q.type || 'multiple_choice'}
                       onChange={(e) => {
-                        handleQuestionChange(qIndex, 'type', e.target.value);
-                        // Auto-populate required fields when switching to multiple choice
-                        if (e.target.value === 'multiple_choice' && !q.options) {
-                          handleQuestionChange(qIndex, 'options', ['Option 1', 'Option 2']);
-                          handleQuestionChange(qIndex, 'answer', 0);
+                        const newType = e.target.value;
+                        handleQuestionChange(qIndex, 'type', newType);
+                        if (newType === 'multiple_choice') {
+                          if (!q.options) {
+                            handleQuestionChange(qIndex, 'options', ['Option 1', 'Option 2']);
+                          }
+                          handleQuestionChange(qIndex, 'correctAnswers', q.correctAnswers || [0]);
+                          handleQuestionChange(qIndex, 'allowMultipleAnswers', q.allowMultipleAnswers || false);
                         }
                       }}
                     >
                       <option value="multiple_choice">Multiple Choice</option>
                       <option value="open_ended">Open Ended</option>
                     </select>
+                    <input
+                      type="number"
+                      min={0}
+                      className="form-control w-auto"
+                      style={{ maxWidth: '120px' }}
+                      placeholder="Points"
+                      value={q.points || 0}
+                      onChange={(e) => handleQuestionChange(qIndex, 'points', Number(e.target.value))}
+                    />
                   </div>
 
                   <div className="ms-3">
                     {(!q.type || q.type === 'multiple_choice') ? (
                       <>
-                        <label className="form-label small text-muted">Options (Select the correct one):</label>
+                        <div className="form-check form-switch mb-3">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id={`multi-answer-toggle-${q.id}`}
+                            checked={q.allowMultipleAnswers || false}
+                            onChange={(e) => {
+                              const allowMulti = e.target.checked;
+                              const currentAnswers = q.correctAnswers || [];
+                              const newAnswers = allowMulti
+                                ? currentAnswers.length > 0 ? currentAnswers : [0]
+                                : currentAnswers.length > 0 ? [currentAnswers[0]] : [0];
+                              handleQuestionChange(qIndex, 'allowMultipleAnswers', allowMulti);
+                              handleQuestionChange(qIndex, 'correctAnswers', newAnswers);
+                            }}
+                          />
+                          <label className="form-check-label" htmlFor={`multi-answer-toggle-${q.id}`}>
+                            Allow multiple correct answers
+                          </label>
+                        </div>
+                        <label className="form-label small text-muted">
+                          Options (Select the correct {q.allowMultipleAnswers ? 'answers' : 'answer'}):
+                        </label>
                         {q.options?.map((opt, oIndex) => (
                           <div key={oIndex} className="input-group mb-2">
                             <div className="input-group-text">
                               <input
-                                type="radio"
-                                name={`q${qIndex}`}
+                                type="checkbox"
                                 className="form-check-input mt-0"
-                                checked={q.answer === oIndex}
-                                onChange={() => handleQuestionChange(qIndex, 'answer', oIndex)}
+                                checked={(q.correctAnswers || []).includes(oIndex)}
+                                onChange={(e) => {
+                                  const currentAnswers = q.correctAnswers || [];
+                                  let newAnswers;
+                                  if (q.allowMultipleAnswers) {
+                                    if (e.target.checked) {
+                                      newAnswers = [...currentAnswers, oIndex];
+                                    } else {
+                                      newAnswers = currentAnswers.filter(a => a !== oIndex);
+                                    }
+                                  } else {
+                                    newAnswers = e.target.checked ? [oIndex] : [];
+                                  }
+                                  handleQuestionChange(qIndex, 'correctAnswers', newAnswers);
+                                }}
                               />
                             </div>
                             <input
@@ -385,13 +462,27 @@ const TeacherDashboard = () => {
                 </div>
               </div>
             ))}
-
+            {error && (
+              <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                {error}
+                <button type="button" className="btn-close" onClick={() => setError('')} aria-label="Close"></button>
+              </div>
+            )}
             <div className="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
               <button className="btn btn-outline-primary me-md-2" onClick={handleAddQuestion}>Add New Question</button>
-              <button className="btn btn-success px-5" onClick={handleSave}>
-                {editingExam?.isNew ? 'Create Exam' : 'Save Changes'}
-              </button>
-              <button className="btn btn-secondary px-4" onClick={() => setEditingExam(null)}>Cancel</button>
+              {(() => {
+                const totalPoints = editingExam.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0);
+                return (
+                  <button
+                    className="btn btn-success px-5"
+                    onClick={handleSave}
+                    disabled={totalPoints !== 100}
+                  >
+                    {editingExam?.isNew ? 'Create Exam' : 'Save Changes'}
+                  </button>
+                );
+              })()}
+              <button className="btn btn-secondary px-4" onClick={() => { setEditingExam(null); setError(''); }}>Cancel</button>
             </div>
           </div>
         </div>
@@ -426,31 +517,46 @@ const TeacherDashboard = () => {
                   <div>
                     <h6 className="mb-1 d-flex align-items-center gap-2">
                       {exam.title}
-                      {exam.isPublished ? (
-                        <span className="badge bg-success">Published</span>
-                      ) : (
-                        <span className="badge bg-secondary">Draft</span>
-                      )}
+                      {(() => {
+                        const status = getExamStatus(exam);
+                        if (status === 'Published') {
+                          return <span className="badge bg-success">Published</span>;
+                        } else if (status === 'Scheduled') {
+                          return <span className="badge bg-warning text-dark">Scheduled</span>;
+                        } else if (status === 'Done') {
+                          return <span className="badge bg-secondary">Done</span>;
+                        } else {
+                          return <span className="badge bg-dark">Draft</span>;
+                        }
+                      })()}
                     </h6>
-                    <small className="text-muted">ID: {exam.id} | {exam.questions.length} Questions | {exam.duration || 60} mins</small>
+                    <small className="text-muted">
+                      ID: {exam.id} | {exam.questions.length} Questions | {exam.duration || 60} mins
+                      {exam.startDate && ` | Start: ${formatDate(exam.startDate)}`}
+                      {exam.endDate && ` | End: ${formatDate(exam.endDate)}`}
+                    </small>
                   </div>
                   <div className="d-flex gap-3 flex-wrap">
-                    <button
-                      className={`btn btn-sm ${exam.isPublished ? 'btn-outline-warning' : 'btn-outline-success'}`}
-                      onClick={() => handleTogglePublish(exam)}
-                    >
-                      {exam.isPublished ? 'Unpublish' : 'Publish'}
-                    </button>
+                    {getExamStatus(exam) === 'Done' && (
+                      <button
+                        className={`btn btn-sm ${submissionCounts[exam.id] === 0 ? 'btn-secondary disabled' : exam.areGradesPublished ? 'btn-outline-warning' : 'btn-outline-success'}`}
+                        onClick={() => handleTogglePublishGrades(exam)}
+                        disabled={submissionCounts[exam.id] === 0}
+                        title={submissionCounts[exam.id] === 0 ? 'No student submissions yet' : exam.areGradesPublished ? 'Click to unpublish grades' : 'Click to publish grades'}
+                      >
+                        {exam.areGradesPublished ? 'Unpublish Grades' : 'Publish Grades'}
+                      </button>
+                    )}
                     <button
                       className="btn btn-sm btn-outline-info"
-                      onClick={() => handleViewScores(exam)}
+                      onClick={() => navigate(`/teacher/exam/${exam.id}/scores`)}
                     >
                       View Scores
                     </button>
                     <button
                       className="btn btn-sm btn-outline-primary"
                       onClick={() => handleEditClick(exam)}
-                      disabled={exam.isPublished}
+                      disabled={getExamStatus(exam) === 'Published' || getExamStatus(exam) === 'Done'}
                     >
                       Edit
                     </button>
@@ -473,5 +579,4 @@ const TeacherDashboard = () => {
     </div>
   );
 };
-
 export default TeacherDashboard;

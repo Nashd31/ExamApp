@@ -5,6 +5,8 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import StudentPortal from './pages/StudentPortal';
 import TakeExam from './pages/TakeExam';
 import ReviewExam from './pages/ReviewExam';
+import GradeSubmission from './pages/GradeSubmission';
+import ExamScores from './pages/ExamScores';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
@@ -75,6 +77,22 @@ function App() {
                     element={
                       <ProtectedRoute allowedRole="teacher">
                         <TeacherDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/teacher/exam/:examId/scores"
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <ExamScores />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/grade/:submissionId"
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <GradeSubmission />
                       </ProtectedRoute>
                     }
                   />
