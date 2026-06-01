@@ -504,6 +504,7 @@ const TeacherDashboard = () => {
         <div className="card-body px-5 py-4">
           <h5 className="card-title mb-1">Manage Exams</h5>
           <p className="text-muted mb-4">Welcome back, <strong>{user?.name || 'Teacher'}</strong>. Use this dashboard to manage exams, review student submissions, and publish grades.</p>
+          <p className="text-muted mb-4">Welcome back, <strong>{user?.name || 'Teacher'}</strong>. Use this dashboard to manage exams, review student submissions, and publish grades.</p>
           {loading ? (
             <div className="text-center my-5">
               <div className="spinner-border text-primary" role="status">
