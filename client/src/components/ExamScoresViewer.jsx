@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { getExamById, getExamSubmissions } from '../api/examService';
 import { showError } from '../services/notify';
+import { formatDate } from '../utils/examUtils';
 
 /**
  * ExamLineChart Component
@@ -22,9 +22,12 @@ const ExamLineChart = ({ submissions, passGrade }) => {
 
   const yGridLines = [0, 25, 50, 75, 100];
 
+  // Sort submissions descending (highest first on the left, lowest on the right)
+  const sortedSubmissions = [...submissions].sort((a, b) => b.score - a.score);
+
   // Map submissions to SVG coordinate points
-  const points = submissions.map((sub, i) => {
-    const x = paddingLeft + (submissions.length > 1 ? (i / (submissions.length - 1)) * chartWidth : chartWidth / 2);
+  const points = sortedSubmissions.map((sub, i) => {
+    const x = paddingLeft + (sortedSubmissions.length > 1 ? (i / (sortedSubmissions.length - 1)) * chartWidth : chartWidth / 2);
     const y = paddingTop + chartHeight - (sub.score / 100) * chartHeight;
     return { x, y, score: sub.score, name: sub.studentName };
   });
@@ -46,13 +49,13 @@ const ExamLineChart = ({ submissions, passGrade }) => {
       <defs>
         {/* Glowing stroke gradient */}
         <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#4f46e5" />
+          <stop offset="0%" stopColor="#10b981" />
           <stop offset="100%" stopColor="#06b6d4" />
         </linearGradient>
         {/* Shaded area gradient */}
         <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+          <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
         </linearGradient>
       </defs>
 
@@ -92,7 +95,7 @@ const ExamLineChart = ({ submissions, passGrade }) => {
               y1={y}
               x2={width - paddingRight}
               y2={y}
-              stroke="#10b981"
+              stroke="#f59e0b"
               strokeWidth="1.5"
               strokeDasharray="2 2"
               strokeOpacity="0.75"
@@ -100,7 +103,7 @@ const ExamLineChart = ({ submissions, passGrade }) => {
             <text
               x={width - paddingRight - 5}
               y={y - 4}
-              fill="#10b981"
+              fill="#f59e0b"
               fontSize="9"
               fontWeight="bold"
               textAnchor="end"
@@ -225,7 +228,7 @@ const ExamLineChart = ({ submissions, passGrade }) => {
  * ExamDonutChart Component
  * Draws an SVG Donut Chart of Pass/Fail ratios with custom legends and labels.
  */
-const ExamDonutChart = ({ passPercent, failPercent, passCount, failCount, highestScore, lowestScore }) => {
+const ExamDonutChart = ({ passPercent, failPercent, passCount, failCount, highestScore, lowestScore, passGrade }) => {
   const radius = 45;
   const strokeWidth = 10;
   const circumference = 2 * Math.PI * radius; // ~282.74
@@ -235,8 +238,8 @@ const ExamDonutChart = ({ passPercent, failPercent, passCount, failCount, highes
 
   return (
     <div className="d-flex flex-column align-items-center justify-content-center w-100">
-      <div className="position-relative" style={{ width: '120px', height: '120px' }}>
-        <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
+      <div className="position-relative" style={{ width: '100px', height: '100px' }}>
+        <svg width="100" height="100" viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
           {/* Base Background Circle */}
           <circle
             cx="60"
@@ -286,28 +289,35 @@ const ExamDonutChart = ({ passPercent, failPercent, passCount, failCount, highes
       <div className="mt-3 w-100 px-3">
         <div className="d-flex justify-content-between align-items-center mb-2 small border-bottom pb-1">
           <span className="d-flex align-items-center gap-2">
-            <span className="d-inline-block rounded-circle bg-success" style={{ width: '10px', height: '10px' }}></span>
+            <span className="d-inline-block rounded-circle bg-warning" style={{ width: '8px', height: '8px' }}></span>
+            Passing Grade
+          </span>
+          <span className="fw-bold text-warning">{passGrade}%</span>
+        </div>
+        <div className="d-flex justify-content-between align-items-center mb-2 small border-bottom pb-1">
+          <span className="d-flex align-items-center gap-2">
+            <span className="d-inline-block rounded-circle bg-success" style={{ width: '8px', height: '8px' }}></span>
             Passed
           </span>
           <span className="fw-bold text-success">{passPercent}% ({passCount})</span>
         </div>
         <div className="d-flex justify-content-between align-items-center mb-2 small border-bottom pb-1">
           <span className="d-flex align-items-center gap-2">
-            <span className="d-inline-block rounded-circle bg-danger" style={{ width: '10px', height: '10px' }}></span>
+            <span className="d-inline-block rounded-circle bg-danger" style={{ width: '8px', height: '8px' }}></span>
             Failed
           </span>
           <span className="fw-bold text-danger">{failPercent}% ({failCount})</span>
         </div>
         <div className="d-flex justify-content-between align-items-center mb-2 small border-bottom pb-1">
           <span className="d-flex align-items-center gap-2">
-            <span className="d-inline-block rounded-circle bg-primary" style={{ width: '10px', height: '10px' }}></span>
+            <span className="d-inline-block rounded-circle bg-info" style={{ width: '8px', height: '8px' }}></span>
             Highest Score
           </span>
           <span className="fw-bold text-primary">{highestScore}%</span>
         </div>
         <div className="d-flex justify-content-between align-items-center mb-2 small border-bottom pb-1">
           <span className="d-flex align-items-center gap-2">
-            <span className="d-inline-block rounded-circle bg-primary" style={{ width: '10px', height: '10px' }}></span>
+            <span className="d-inline-block rounded-circle bg-secondary" style={{ width: '8px', height: '8px' }}></span>
             Lowest Score
           </span>
           <span className="fw-bold text-primary">{lowestScore}%</span>
@@ -318,13 +328,10 @@ const ExamDonutChart = ({ passPercent, failPercent, passCount, failCount, highes
 };
 
 /**
- * ExamScores Component
- * Main page listing student submissions and showing visual performance analytics.
+ * ExamScoresViewer Component
+ * Renders scores list and analytics distribution inline.
  */
-const ExamScores = () => {
-  const { examId } = useParams();
-  const navigate = useNavigate();
-
+const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
   const [exam, setExam] = useState(null);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -351,20 +358,26 @@ const ExamScores = () => {
 
   if (loading) {
     return (
-      <div className="container mt-5 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+      <div className="card portal-glass-card border-0">
+        <div className="card-body p-5 text-center">
+          <div className="spinner-border text-success" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="text-muted mt-2 small">Loading exam scores...</p>
         </div>
-        <p className="mt-2">Loading scores...</p>
       </div>
     );
   }
 
   if (!exam) {
     return (
-      <div className="container mt-4">
-        <div className="alert alert-danger">Exam not found.</div>
-        <button className="btn btn-primary" onClick={() => navigate('/teacher')}>Back to Dashboard</button>
+      <div className="card portal-glass-card border-0">
+        <div className="card-body p-4">
+          <div className="alert alert-danger mb-3">Exam not found.</div>
+          <button className="btn btn-primary" onClick={onBack}>
+            Back to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
@@ -386,109 +399,202 @@ const ExamScores = () => {
   const lowestScore = totalCount > 0 ? Math.min(...submissions.map(s => s.score)) : 0;
 
   return (
-    <div className="container mt-4 mb-5">
-      <div className="card shadow rounded-4">
-        <div className="card-header bg-info text-white d-flex justify-content-between align-items-center p-4 rounded-top-4">
-          <h3 className="mb-0">Scores for: {exam.title}</h3>
-          <div className="d-flex gap-2">
-            {submissions.length > 0 && (
-              <button
-                className="btn btn-outline-light px-3 fw-semibold"
-                onClick={() => setShowCharts(!showCharts)}
-              >
-                {showCharts ? 'Hide Charts' : 'Show Charts'}
-              </button>
-            )}
-            <button className="btn btn-outline-light px-4" onClick={() => navigate('/teacher')}>Back to Exams</button>
-          </div>
+    <div className="card portal-glass-card border-0 overflow-hidden">
+      <style>{`
+        .scores-header-card {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            color: #ffffff;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1) !important;
+        }
+        .btn-toggle-charts {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-toggle-charts:hover {
+            background: #ffffff;
+            color: #059669;
+            transform: translateY(-1px);
+        }
+
+        .analytics-block {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(16, 185, 129, 0.12);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01);
+        }
+
+        .modern-scores-table {
+            margin-bottom: 0;
+            width: 100%;
+        }
+        .modern-scores-table th {
+            font-weight: 700;
+            font-size: 13.5px;
+            color: #064e3b;
+            background: rgba(16, 185, 129, 0.08) !important;
+            padding: 12px 18px;
+            border-bottom: 1.5px solid rgba(16, 185, 129, 0.15);
+        }
+        .modern-scores-table td {
+            padding: 12px 18px;
+            font-size: 13px;
+            color: #334155;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .modern-scores-table tr {
+            transition: all 0.2s ease;
+        }
+        .modern-scores-table tr:hover {
+            background-color: rgba(16, 185, 129, 0.02) !important;
+        }
+        .score-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3.5px 9px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+        .score-pass {
+            background-color: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+        .score-fail {
+            background-color: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #fca5a5;
+        }
+
+        .btn-grade-review {
+            background: rgba(79, 70, 229, 0.06);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            color: #4f46e5;
+            font-weight: 600;
+            font-size: 12px;
+            border-radius: 6px;
+            padding: 5px 12px;
+            transition: all 0.2s ease;
+        }
+        .btn-grade-review:hover {
+            background: #4f46e5;
+            color: #ffffff;
+            border-color: #4f46e5;
+            transform: translateY(-0.5px);
+        }
+      `}</style>
+
+      <div className="card-header scores-header-card d-flex justify-content-between align-items-center p-4 border-0">
+        <h4 className="fw-bold mb-0">
+          Scores for: <span className="text-warning fw-semibold">{exam.title}</span>
+        </h4>
+        <div className="d-flex gap-2">
+          {submissions.length > 0 && (
+            <button
+              className="btn btn-toggle-charts px-3 rounded-3 btn-sm"
+              onClick={() => setShowCharts(!showCharts)}
+            >
+              {showCharts ? 'Hide Charts' : 'Show Charts'}
+            </button>
+          )}
+          <button className="btn btn-outline-light px-4 rounded-3 fw-semibold btn-sm" onClick={onBack}>
+            Back to List
+          </button>
         </div>
-        <div className="card-body px-5 py-4">
+      </div>
 
-          {/* Charts & Analytics Section */}
-          {showCharts && submissions.length > 0 && (
-            <div className="mb-5 p-4 bg-light rounded-4 border">
-              <h5 className="mb-4 text-secondary fw-semibold border-bottom pb-2">Exam Analytics</h5>
+      <div className="card-body p-4 p-md-5">
+        {/* Charts & Analytics Section */}
+        {showCharts && submissions.length > 0 && (
+          <div className="analytics-block mb-4">
+            <h5 className="mb-3 fw-bold text-dark" style={{ fontSize: '15px' }}>Exam Performance Analytics</h5>
 
-              {/* Graphic charts & Stacking row */}
-              <div className="row g-4">
-                {/* Left Column: Custom SVG Line Chart */}
-                <div className="col-lg-8">
-                  <div className="bg-white p-4 rounded-3 shadow-sm border h-100">
-                    <h6 className="text-muted mb-3 fw-semibold">Performance Distribution Graph (Scores)</h6>
-                    <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '220px' }}>
-                      <ExamLineChart submissions={submissions} passGrade={passGrade} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column: Stacked Average Card and Donut Chart */}
-                <div className="col-lg-4 d-flex flex-column gap-3">
-                  {/* Average Score Card */}
-                  <div className="card text-center border shadow-sm p-4 bg-white rounded-3">
-                    <div className="text-muted mb-1 small fw-bold text-uppercase">Average Score</div>
-                    <div className="fs-2 fw-bold text-primary">{averageScore}%</div>
-                  </div>
-
-                  {/* Pass/Fail Donut Chart Card */}
-                  <div className="bg-white p-4 rounded-3 shadow-sm border d-flex flex-column align-items-center justify-content-center flex-grow-1">
-                    <h6 className="text-muted mb-3 fw-semibold text-center w-100">Pass/Fail Rate Ratio</h6>
-                    <ExamDonutChart
-                      passPercent={passPercent}
-                      failPercent={failPercent}
-                      passCount={passCount}
-                      failCount={failCount}
-                      highestScore={highestScore}
-                      lowestScore={lowestScore}
-                    />
+            <div className="row g-3">
+              {/* Left Column: Custom SVG Line Chart */}
+              <div className="col-lg-8">
+                <div className="bg-white p-3 rounded-3 border h-100">
+                  <h6 className="text-muted mb-3 fw-semibold" style={{ fontSize: '12px' }}>Performance Distribution Graph (Scores)</h6>
+                  <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '220px' }}>
+                    <ExamLineChart submissions={submissions} passGrade={passGrade} />
                   </div>
                 </div>
               </div>
-            </div>
-          )}
 
-          {submissions.length === 0 ? (
-            <p className="text-muted text-center my-4">No submissions found for this exam.</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>Student Name</th>
-                    <th>Score</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {submissions.map((sub, idx) => (
-                    <tr key={idx}>
-                      <td>{sub.studentName}</td>
-                      <td>{sub.score}%</td>
-                      <td>
-                        {sub.score >= passGrade ? (
-                          <span className="badge bg-success">Passed</span>
-                        ) : (
-                          <span className="badge bg-danger">Failed</span>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-sm btn-outline-warning"
-                          onClick={() => navigate(`/grade/${sub.id}`)}
-                        >
-                          Review & Grade
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              {/* Right Column: Stacked Average Card and Donut Chart */}
+              <div className="col-lg-4 d-flex flex-column gap-3">
+                {/* Average Score Card */}
+                <div className="card text-center border shadow-sm p-3 bg-white rounded-3">
+                  <div className="text-muted mb-1 small fw-bold text-uppercase" style={{ fontSize: '10px' }}>Average Score</div>
+                  <div className="fs-3 fw-bold text-primary">{averageScore}%</div>
+                </div>
+
+                {/* Pass/Fail Donut Chart Card */}
+                <div className="bg-white p-3 rounded-3 border d-flex flex-column align-items-center justify-content-center flex-grow-1">
+                  <h6 className="text-muted mb-3 fw-semibold text-center w-100" style={{ fontSize: '12px' }}>Pass/Fail Rate Ratio</h6>
+                  <ExamDonutChart
+                    passPercent={passPercent}
+                    failPercent={failPercent}
+                    passCount={passCount}
+                    failCount={failCount}
+                    highestScore={highestScore}
+                    lowestScore={lowestScore}
+                    passGrade={passGrade}
+                  />
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {submissions.length === 0 ? (
+          <div className="text-center py-5">
+            <p className="text-muted mb-0">No submissions found for this exam.</p>
+          </div>
+        ) : (
+          <div className="table-responsive border rounded-3 overflow-hidden">
+            <table className="modern-scores-table table align-middle">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Submission Date</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {submissions.map((sub, idx) => (
+                  <tr key={idx}>
+                    <td className="fw-semibold text-dark">{sub.studentName}</td>
+                    <td>{formatDate(sub.submittedAt)}</td>
+                    <td className="fw-bold text-primary">{sub.score}%</td>
+                    <td>
+                      {sub.score >= passGrade ? (
+                        <span className="score-badge score-pass">Passed</span>
+                      ) : (
+                        <span className="score-badge score-fail">Failed</span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        className="btn-grade-review"
+                        onClick={() => onGrade(sub.id)}
+                      >
+                        Review & Grade
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-export default ExamScores;
+export default ExamScoresViewer;
