@@ -257,3 +257,161 @@ export const updateSubmissionGrade = (submissionId, questionId, points, notes) =
   });
 };
 
+/**
+ * Retrieves all courses in the mock database.
+ */
+export const getAllCourses = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([...(mockDb.courses || [])]);
+    }, DELAY);
+  });
+};
+
+/**
+ * Retrieves courses taught by a specific teacher.
+ */
+export const getCoursesByTeacher = (teacherId) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const courses = (mockDb.courses || []).filter(c => c.teacherId === teacherId);
+      resolve(courses);
+    }, DELAY);
+  });
+};
+
+/**
+ * Creates a new course in the mock database.
+ */
+export const createCourse = (courseName, courseCode, teacherId) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const codeExists = (mockDb.courses || []).some(c => c.code.toLowerCase() === courseCode.toLowerCase());
+      if (codeExists) {
+        return reject(new Error("Course code already exists"));
+      }
+
+      const newCourse = {
+        id: "c" + Date.now(),
+        name: courseName,
+        code: courseCode,
+        teacherId
+      };
+
+      mockDb.courses = mockDb.courses || [];
+      mockDb.courses.push(newCourse);
+      saveToStorage(mockDb);
+      resolve(newCourse);
+    }, DELAY);
+  });
+};
+
+/**
+ * Enrolls a student in a course by its course code.
+ */
+export const enrollStudentInCourse = (studentId, courseCode) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const course = (mockDb.courses || []).find(c => c.code.toLowerCase() === courseCode.toLowerCase());
+      if (!course) {
+        return reject(new Error("Course code not found"));
+      }
+
+      const userIndex = mockDb.users.findIndex(u => u.id === studentId);
+      if (userIndex === -1) {
+        return reject(new Error("User not found"));
+      }
+
+      const student = mockDb.users[userIndex];
+      student.enrolledCourses = student.enrolledCourses || [];
+
+      if (student.enrolledCourses.includes(course.id)) {
+        return reject(new Error("Already enrolled in this course"));
+      }
+
+      student.enrolledCourses.push(course.id);
+      saveToStorage(mockDb);
+      resolve(course);
+    }, DELAY);
+  });
+};
+
+/**
+ * Retrieves courses a specific student is enrolled in.
+ */
+export const getStudentEnrolledCourses = (studentId) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const student = mockDb.users.find(u => u.id === studentId);
+      if (!student) {
+        return resolve([]);
+      }
+      const enrolledIds = student.enrolledCourses || [];
+      const courses = (mockDb.courses || []).filter(c => enrolledIds.includes(c.id));
+      resolve(courses);
+    }, DELAY);
+  });
+};
+
+/**
+ * Unenrolls/removes a student from a course by its course ID.
+ */
+export const unenrollStudentFromCourse = (studentId, courseId) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const userIndex = mockDb.users.findIndex(u => u.id === studentId);
+      if (userIndex === -1) {
+        return reject(new Error("User not found"));
+      }
+
+      const student = mockDb.users[userIndex];
+      student.enrolledCourses = student.enrolledCourses || [];
+
+      const courseIndex = student.enrolledCourses.indexOf(courseId);
+      if (courseIndex === -1) {
+        return reject(new Error("You are not enrolled in this course"));
+      }
+
+      student.enrolledCourses.splice(courseIndex, 1);
+      saveToStorage(mockDb);
+      resolve();
+    }, DELAY);
+  });
+};
+
+/**
+ * Deletes a course from the mock database by its ID.
+ * Also removes all exams associated with this course,
+ * and clears student enrollments for this course.
+ */
+export const deleteCourse = (courseId) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const courseIndex = (mockDb.courses || []).findIndex(c => c.id === courseId);
+      if (courseIndex === -1) {
+        return reject(new Error("Course not found"));
+      }
+
+      // Remove the course
+      mockDb.courses.splice(courseIndex, 1);
+
+      // Remove all exams associated with this course
+      if (mockDb.exams) {
+        mockDb.exams = mockDb.exams.filter(e => e.courseId !== courseId);
+      }
+
+      // Clean up student enrollments
+      if (mockDb.users) {
+        mockDb.users.forEach(u => {
+          if (u.enrolledCourses) {
+            u.enrolledCourses = u.enrolledCourses.filter(cid => cid !== courseId);
+          }
+        });
+      }
+
+      saveToStorage(mockDb);
+      resolve();
+    }, DELAY);
+  });
+};
+

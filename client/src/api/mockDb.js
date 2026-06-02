@@ -18,12 +18,13 @@ const loadFromStorage = () => {
           return null;
         }
 
-        // Ensure default values exist for exams loaded from older formats
-        parsed.exams = parsed.exams.map(e => ({
+          // Ensure default values exist for exams loaded from older formats
+        parsed.exams = parsed.exams.map((e, idx) => ({
           ...e,
           duration: e.duration || 60,
           passGrade: e.passGrade || 50,
           areGradesPublished: e.areGradesPublished !== undefined ? e.areGradesPublished : false,
+          courseId: e.courseId || (idx === 0 ? "c1" : idx === 1 ? "c2" : "c3"),
           questions: (e.questions || []).map(q => ({
             ...q,
             allowMultipleAnswers: q.allowMultipleAnswers !== undefined ? q.allowMultipleAnswers : false,
@@ -32,6 +33,28 @@ const loadFromStorage = () => {
               : (q.answer !== undefined ? [q.answer] : [0])
           }))
         }));
+
+        // Migrate courses if they are missing
+        if (!parsed.courses) {
+          parsed.courses = [
+            { id: "c1", name: "JavaScript Advanced", code: "JS-301", teacherId: "u1" },
+            { id: "c2", name: "React Web Apps", code: "REACT-102", teacherId: "u1" },
+            { id: "c3", name: "Node.js Basics", code: "NODE-101", teacherId: "u1" }
+          ];
+        }
+
+        // Migrate student enrollments if they are missing
+        if (parsed.users) {
+          parsed.users = parsed.users.map(u => {
+            if (u.role === 'student' && !u.enrolledCourses) {
+              return {
+                ...u,
+                enrolledCourses: ["c1", "c2", "c3"]
+              };
+            }
+            return u;
+          });
+        }
       }
       return parsed;
     }
@@ -55,10 +78,16 @@ export const saveToStorage = (data) => {
 };
 
 const defaultData = {
+  courses: [
+    { id: "c1", name: "JavaScript Advanced", code: "JS-301", teacherId: "u1" },
+    { id: "c2", name: "React Web Apps", code: "REACT-102", teacherId: "u1" },
+    { id: "c3", name: "Node.js Basics", code: "NODE-101", teacherId: "u1" }
+  ],
   exams: [
     {
       id: "1",
       title: "JavaScript Basics",
+      courseId: "c1",
       startDate: "2026-05-01T10:00:00.000Z",
       endDate: "2026-05-01T12:00:00.000Z",
       areGradesPublished: false,
@@ -73,6 +102,7 @@ const defaultData = {
     {
       id: "2",
       title: "React Fundamentals",
+      courseId: "c2",
       startDate: "2026-06-01T10:00:00.000Z",
       endDate: "2026-06-01T20:00:00.000Z",
       areGradesPublished: false,
@@ -86,6 +116,7 @@ const defaultData = {
     {
       id: "3",
       title: "Node.js Basics",
+      courseId: "c3",
       startDate: "2026-07-01T10:00:00.000Z",
       endDate: "2026-07-01T12:00:00.000Z",
       areGradesPublished: false,
@@ -110,14 +141,16 @@ const defaultData = {
       email: "student@test.com",
       password: "123",
       name: "Test Student",
-      role: "student"
+      role: "student",
+      enrolledCourses: ["c1", "c2", "c3"]
     },
     {
       id: "u3",
       email: "john@test.com",
       password: "123",
       name: "John Doe",
-      role: "student"
+      role: "student",
+      enrolledCourses: ["c1", "c2", "c3"]
     }
   ],
   submissions: [
@@ -151,5 +184,8 @@ const defaultData = {
 };
 
 const mockDb = loadFromStorage() || defaultData;
+if (!localStorage.getItem('examApp_mockDb')) {
+  saveToStorage(mockDb);
+}
 
 export default mockDb;
