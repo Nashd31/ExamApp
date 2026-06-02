@@ -31,3 +31,14 @@ html {
   scrollbar-width: thin;
   scrollbar-color: #5b7cfa #f1f1f5;
 }
+
+/* ---- Dialog modal animations ---- */
+@keyframes dialogFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes dialogSlideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}

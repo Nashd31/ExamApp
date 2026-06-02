@@ -1,14 +1,17 @@
-import { useState } from 'react';
-import { createExam, updateExam } from '../api/examService';
+import { useState, useEffect } from 'react';
+import { createExam, updateExam, getCoursesByTeacher } from '../api/examService';
 import { showSuccess } from '../services/notify';
 import { getExamStatus, toDatetimeLocal } from '../utils/examUtils';
+import { useAuth } from '../hooks/useAuth';
 
 /**
  * ExamEditor Component
  * Provides the interface for creating or editing a single exam.
  * Features a live points progress bar validation and custom styled inputs.
  */
-const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel }) => {
+const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) => {
+  const { user } = useAuth();
+  const [courses, setCourses] = useState(null);
   const [editingExam, setEditingExam] = useState(() => {
     if (exam) {
       return JSON.parse(JSON.stringify(exam));
@@ -19,6 +22,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel }) => {
       passGrade: 50,
       startDate: '',
       endDate: '',
+      courseId: defaultCourseId || '',
       areGradesPublished: false,
       questions: [
         {
@@ -35,6 +39,75 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel }) => {
     };
   });
   const [error, setError] = useState('');
+  const [courseDropdownOpen, setCourseDropdownOpen] = useState(false);
+  const [openQuestionTypeDropdownIndex, setOpenQuestionTypeDropdownIndex] = useState(null);
+
+  useEffect(() => {
+    const handleDocumentClick = () => {
+      setCourseDropdownOpen(false);
+      setOpenQuestionTypeDropdownIndex(null);
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, []);
+
+  const toggleCourseDropdown = (e) => {
+    e.stopPropagation();
+    setCourseDropdownOpen(!courseDropdownOpen);
+    setOpenQuestionTypeDropdownIndex(null);
+  };
+
+  const toggleQuestionTypeDropdown = (e, index) => {
+    e.stopPropagation();
+    setOpenQuestionTypeDropdownIndex(prev => prev === index ? null : index);
+    setCourseDropdownOpen(false);
+  };
+
+  const selectQuestionType = (qIndex, newType) => {
+    setEditingExam(prev => {
+      const updatedQuestions = [...prev.questions];
+      // shallow copy the specific question object to avoid mutating state directly
+      const q = { ...updatedQuestions[qIndex] };
+      q.type = newType;
+      if (newType === 'multiple_choice') {
+        if (!q.options) {
+          q.options = ['Option 1', 'Option 2'];
+        }
+        q.correctAnswers = q.correctAnswers || [0];
+        q.allowMultipleAnswers = q.allowMultipleAnswers || false;
+      }
+      updatedQuestions[qIndex] = q;
+      return { ...prev, questions: updatedQuestions };
+    });
+    setOpenQuestionTypeDropdownIndex(null);
+  };
+
+  const selectCourse = (courseId) => {
+    setEditingExam(prev => ({ ...prev, courseId }));
+    setCourseDropdownOpen(false);
+  };
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      if (user?.id) {
+        try {
+          const data = await getCoursesByTeacher(user.id);
+          setCourses(data);
+          // If editing a new exam, set its courseId to the default course or first course by default
+          setEditingExam(prev => {
+            if (!prev.courseId && data.length > 0) {
+              const initialCourseId = defaultCourseId && data.some(c => c.id === defaultCourseId) ? defaultCourseId : data[0].id;
+              return { ...prev, courseId: initialCourseId };
+            }
+            return prev;
+          });
+        } catch (err) {
+          console.error("Failed to fetch courses:", err);
+        }
+      }
+    };
+    fetchCourses();
+  }, [user, defaultCourseId]);
 
   // Updates the title of the exam currently being edited.
   const handleTitleChange = (e) => {
@@ -108,6 +181,10 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel }) => {
   // Persists the currently edited exam (either creating a new one or updating an existing one).
   const handleSave = async () => {
     setError('');
+    if (!editingExam.courseId) {
+      setError('Please select a course for this exam.');
+      return;
+    }
     if (!editingExam.startDate || !editingExam.endDate) {
       setError('Start date and End date are required.');
       return;
@@ -172,6 +249,76 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel }) => {
             background: linear-gradient(135deg, #10b981, #059669) !important;
             color: #ffffff;
             box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1) !important;
+        }
+
+        .custom-dropdown-container {
+            position: relative;
+            width: 100%;
+        }
+        .custom-dropdown-trigger {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-radius: 9px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            background: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: left;
+        }
+        .custom-dropdown-trigger:focus, .custom-dropdown-trigger.open {
+            border-color: #10b981;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+            outline: none;
+        }
+        .custom-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            z-index: 1000;
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            animation: dropdownSlideIn 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        @keyframes dropdownSlideIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .custom-dropdown-item {
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13.5px;
+            color: #334155;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+        }
+        .custom-dropdown-item:hover {
+            background-color: rgba(16, 185, 129, 0.08);
+            color: #059669;
+        }
+        .custom-dropdown-item.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            font-weight: 600;
         }
 
         .modern-form-control {
@@ -403,6 +550,55 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel }) => {
             />
           </div>
 
+          <div className="mb-4">
+            <label className="form-label small fw-semibold text-secondary mb-1.5">Associated Course</label>
+            {courses === null ? (
+              <div className="text-muted small py-2">
+                <span className="spinner-border spinner-border-sm me-2 text-success" role="status" style={{ width: '1rem', height: '1rem' }}></span>
+                Loading courses...
+              </div>
+            ) : courses.length === 0 ? (
+              <div className="text-danger small fw-semibold p-2 border border-danger rounded bg-light">
+                ⚠️ You must create a course before creating exams.
+              </div>
+            ) : (
+              (() => {
+                const selectedCourse = courses.find(c => c.id === editingExam.courseId);
+                const triggerLabel = selectedCourse 
+                  ? `${selectedCourse.name} (${selectedCourse.code})` 
+                  : '-- Select Course --';
+
+                return (
+                  <div className="custom-dropdown-container">
+                    <button
+                      type="button"
+                      className={`custom-dropdown-trigger ${courseDropdownOpen ? 'open' : ''}`}
+                      onClick={toggleCourseDropdown}
+                    >
+                      <span>{triggerLabel}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transition: 'transform 0.2s', transform: courseDropdownOpen ? 'rotate(180deg)' : 'none' }}>
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                    {courseDropdownOpen && (
+                      <div className="custom-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                        {courses.map(c => (
+                          <div
+                            key={c.id}
+                            className={`custom-dropdown-item ${editingExam.courseId === c.id ? 'active' : ''}`}
+                            onClick={() => selectCourse(c.id)}
+                          >
+                            {c.name} ({c.code})
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()
+            )}
+          </div>
+
           <div className="row g-3">
             <div className="col-md-3 col-sm-6">
               <label className="form-label small fw-semibold text-secondary mb-1.5">Duration (mins)</label>
@@ -517,25 +713,42 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel }) => {
                     placeholder="Enter question statement"
                   />
                 </div>
-                <div style={{ minWidth: '150px' }}>
-                  <select
-                    className="form-select modern-form-control"
-                    value={q.type || 'multiple_choice'}
-                    onChange={(e) => {
-                      const newType = e.target.value;
-                      handleQuestionChange(qIndex, 'type', newType);
-                      if (newType === 'multiple_choice') {
-                        if (!q.options) {
-                          handleQuestionChange(qIndex, 'options', ['Option 1', 'Option 2']);
-                        }
-                        handleQuestionChange(qIndex, 'correctAnswers', q.correctAnswers || [0]);
-                        handleQuestionChange(qIndex, 'allowMultipleAnswers', q.allowMultipleAnswers || false);
-                      }
-                    }}
-                  >
-                    <option value="multiple_choice">Multiple Choice</option>
-                    <option value="open_ended">Open Ended</option>
-                  </select>
+                <div style={{ minWidth: '160px', position: 'relative' }}>
+                  {(() => {
+                    const isOpen = openQuestionTypeDropdownIndex === qIndex;
+                    const typeLabel = q.type === 'open_ended' ? 'Open Ended' : 'Multiple Choice';
+                    return (
+                      <div className="custom-dropdown-container">
+                        <button
+                          type="button"
+                          className={`custom-dropdown-trigger ${isOpen ? 'open' : ''}`}
+                          style={{ height: '38px', padding: '0 12px' }}
+                          onClick={(e) => toggleQuestionTypeDropdown(e, qIndex)}
+                        >
+                          <span>{typeLabel}</span>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none' }}>
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </button>
+                        {isOpen && (
+                          <div className="custom-dropdown-menu" style={{ top: 'calc(100% + 4px)', minWidth: '160px' }} onClick={(e) => e.stopPropagation()}>
+                            <div
+                              className={`custom-dropdown-item ${(!q.type || q.type === 'multiple_choice') ? 'active' : ''}`}
+                              onClick={() => selectQuestionType(qIndex, 'multiple_choice')}
+                            >
+                              Multiple Choice
+                            </div>
+                            <div
+                              className={`custom-dropdown-item ${q.type === 'open_ended' ? 'active' : ''}`}
+                              onClick={() => selectQuestionType(qIndex, 'open_ended')}
+                            >
+                              Open Ended
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div style={{ maxWidth: '120px' }}>
                   <input

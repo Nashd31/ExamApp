@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getExamById, submitExam } from '../api/examService';
 import { showSuccess, showError } from '../services/notify';
+import { useDialog } from '../hooks/useDialog';
 
 /**
  * Renders the interface for taking an exam.
@@ -13,6 +14,7 @@ const TakeExam = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { showConfirm } = useDialog();
     const [exam, setExam] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -173,7 +175,10 @@ const TakeExam = () => {
     const handleSubmit = async () => {
         if (!exam) return;
 
-        const confirmed = window.confirm('Are you sure you want to submit your exam?');
+        const confirmed = await showConfirm(
+            'Submit your exam?',
+            'Once submitted you cannot change your answers.'
+        );
         if (!confirmed) return;
 
         try {

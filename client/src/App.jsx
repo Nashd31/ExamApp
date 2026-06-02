@@ -7,6 +7,7 @@ import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 import { AuthProvider } from './context/AuthContext';
+import { DialogProvider } from './context/DialogContext';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
 
@@ -87,7 +88,7 @@ function AppContent() {
 
 /**
  * The main Application component.
- * Configures React Router, sets up global context providers (AuthProvider),
+ * Configures React Router, sets up global context providers (AuthProvider, DialogProvider),
  * and defines the main layout and route mapping for the application.
  */
 function App() {
@@ -95,13 +96,16 @@ function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ScrollToTop />
       <AuthProvider>
-        <AppContent />
+        <DialogProvider>
+          <AppContent />
+        </DialogProvider>
       </AuthProvider>
     </BrowserRouter>
   );
 }
 
 export default App;
+
 
 
 /* ---------- STYLES ---------- */
