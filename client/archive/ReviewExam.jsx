@@ -49,7 +49,7 @@ const ReviewExam = () => {
    */
   const handleBack = () => {
     if (user.role === 'teacher') {
-      navigate(`/teacher/exam/${id}/scores`);
+      navigate('/teacher', { state: { viewScoresExamId: id } });
     } else {
       navigate('/student');
     }

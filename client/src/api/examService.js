@@ -132,7 +132,15 @@ export const submitExam = (examId, studentName, studentAnswers) => {
       const score = Math.round(totalScore);
 
       mockDb.submissions = mockDb.submissions || [];
-      mockDb.submissions.push({ id: Date.now().toString(), studentName, examId, score, answers: studentAnswers, manualGrades: {} });
+      mockDb.submissions.push({
+        id: Date.now().toString(),
+        studentName,
+        examId,
+        score,
+        answers: studentAnswers,
+        manualGrades: {},
+        submittedAt: new Date().toISOString()
+      });
       saveToStorage(mockDb);
       resolve(score);
     }, DELAY);
@@ -155,7 +163,8 @@ export const getStudentSubmissions = (studentName) => {
           title: exam.title || 'Unknown Exam',
           score: s.score,
           passGrade: exam.passGrade || 50,
-          areGradesPublished: exam.areGradesPublished !== false
+          areGradesPublished: exam.areGradesPublished !== false,
+          submittedAt: s.submittedAt
         };
       });
       resolve(results);
@@ -206,7 +215,7 @@ export const getSubmissionById = (submissionId) => {
   });
 };
 
-export const updateSubmissionGrade = (submissionId, questionId, points) => {
+export const updateSubmissionGrade = (submissionId, questionId, points, notes) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const submission = mockDb.submissions.find(s => s.id === submissionId);
@@ -215,6 +224,9 @@ export const updateSubmissionGrade = (submissionId, questionId, points) => {
       }
       submission.manualGrades = submission.manualGrades || {};
       submission.manualGrades[questionId] = Number(points);
+
+      submission.teacherNotes = submission.teacherNotes || {};
+      submission.teacherNotes[questionId] = notes || "";
 
       const exam = mockDb.exams.find(e => e.id === submission.examId);
       if (exam) {

@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getAllExams, createExam, updateExam, deleteExam, getExamSubmissions } from '../api/examService';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { getAllExams, deleteExam, getExamSubmissions, updateExam } from '../api/examService';
 import { useAuth } from '../hooks/useAuth';
 import { showSuccess, showError } from '../services/notify';
-import { getExamStatus, toDatetimeLocal, formatDate } from '../utils/examUtils';
+import { getExamStatus, formatDate } from '../utils/examUtils';
+import ExamEditor from '../components/ExamEditor';
+import ExamScoresViewer from '../components/ExamScoresViewer';
+import GradeSubmissionViewer from '../components/GradeSubmissionViewer';
 
 /**
  * TeacherDashboard Component
@@ -12,12 +15,31 @@ import { getExamStatus, toDatetimeLocal, formatDate } from '../utils/examUtils';
  */
 const TeacherDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingExam, setEditingExam] = useState(null);
+  const [selectedExam, setSelectedExam] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [viewingScoresExamId, setViewingScoresExamId] = useState(() => location.state?.viewScoresExamId || null);
+  const [gradingSubmissionId, setGradingSubmissionId] = useState(null);
   const [submissionCounts, setSubmissionCounts] = useState({});
-  const [error, setError] = useState('');
+
+  // Clear navigation state so that refreshing the page does not lock the view on the scores
+  useEffect(() => {
+    if (location.state?.viewScoresExamId) {
+      navigate('/teacher', { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
+
+  // Scroll to the top of the main container when switching views (Exams list, editor, scores, grading)
+  useEffect(() => {
+    const container = document.getElementById('main-scroll-container');
+    if (container) {
+      container.scrollTop = 0;
+    }
+  }, [isEditing, viewingScoresExamId, gradingSubmissionId]);
+
   // Fetches all exams from the server and updates local state.
   const fetchExams = async () => {
     try {
@@ -50,19 +72,23 @@ const TeacherDashboard = () => {
     init();
   }, []);
 
-
-
-  // Prepares an exam for editing by creating a deep copy to avoid mutating the original state directly.
+  // Prepares an exam for editing by setting local editing state
   const handleEditClick = (exam) => {
-    setError('');
-    setEditingExam(JSON.parse(JSON.stringify(exam)));
+    setSelectedExam(exam);
+    setIsEditing(true);
+  };
+
+  // Prepares editor for creating a new exam
+  const handleCreateClick = () => {
+    setSelectedExam(null);
+    setIsEditing(true);
   };
 
   const handleTogglePublishGrades = async (exam) => {
     // Validate: exam must be completed and have submissions
     const status = getExamStatus(exam);
     if (status !== 'Done') {
-      showError('Grades can only be published once the exam has acomplished.');
+      showError('Grades can only be published once the exam has accomplished.');
       return;
     }
     if (submissionCounts[exam.id] === 0) {
@@ -82,106 +108,6 @@ const TeacherDashboard = () => {
     }
   };
 
-
-
-
-  // Updates the title of the exam currently being edited.
-  const handleTitleChange = (e) => {
-    setEditingExam({ ...editingExam, title: e.target.value });
-  };
-
-  // Updates a specific field (text, type, answer, etc.) of a question within the exam currently being edited.
-  const handleQuestionChange = (qIndex, field, value) => {
-    const updatedQuestions = [...editingExam.questions];
-    updatedQuestions[qIndex][field] = value;
-    setEditingExam({ ...editingExam, questions: updatedQuestions });
-  };
-
-  // Updates the text of a specific option within a multiple-choice question.
-
-  const handleOptionChange = (qIndex, oIndex, value) => {
-    const updatedQuestions = [...editingExam.questions];
-    updatedQuestions[qIndex].options[oIndex] = value;
-    setEditingExam({ ...editingExam, questions: updatedQuestions });
-  };
-
-
-  // Appends a new blank option to a multiple-choice question.
-  const handleAddOption = (qIndex) => {
-    const updatedQuestions = [...editingExam.questions];
-    updatedQuestions[qIndex].options.push('New Option');
-    setEditingExam({ ...editingExam, questions: updatedQuestions });
-  };
-
-  /**
-   * Removes a specific option from a multiple-choice question.
-   * Adjusts the correct answer index if the removed option shifts the indexes.
-   */
-  const handleRemoveOption = (qIndex, oIndex) => {
-    const updatedQuestions = [...editingExam.questions];
-    if (updatedQuestions[qIndex].options.length > 2) {
-      updatedQuestions[qIndex].options.splice(oIndex, 1);
-      // Adjust the selected correct answers to ensure validity
-      const oldAnswers = updatedQuestions[qIndex].correctAnswers || [];
-      const newAnswers = oldAnswers
-        .filter(ans => ans !== oIndex)
-        .map(ans => ans > oIndex ? ans - 1 : ans);
-      updatedQuestions[qIndex].correctAnswers = newAnswers.length > 0 ? newAnswers : [0];
-      setEditingExam({ ...editingExam, questions: updatedQuestions });
-    }
-  };
-
-
-  // Appends a new default multiple-choice question to the current exam.
-  const handleAddQuestion = () => {
-    const newQuestion = {
-      id: `q${Date.now()}`,
-      text: 'New Question',
-      type: 'multiple_choice',
-      allowMultipleAnswers: false,
-      options: ['Option 1', 'Option 2'],
-      correctAnswers: [0],
-      points: 10
-    };
-
-    setEditingExam({
-      ...editingExam,
-      questions: [...editingExam.questions, newQuestion]
-    });
-  };
-
-  // Removes a specific question from the current exam.
-  const handleRemoveQuestion = (qIndex) => {
-    const updatedQuestions = [...editingExam.questions];
-    updatedQuestions.splice(qIndex, 1);
-    setEditingExam({ ...editingExam, questions: updatedQuestions });
-  };
-
-  // Initializes a new, empty exam template and sets it as the active editing exam.
-  const handleCreateClick = () => {
-    setError('');
-    setEditingExam({
-      title: 'New Exam',
-      duration: 60,
-      passGrade: 50,
-      startDate: '',
-      endDate: '',
-      areGradesPublished: false,
-      questions: [
-        {
-          id: `q${Date.now()}`,
-          type: 'multiple_choice',
-          text: 'New Question',
-          allowMultipleAnswers: false,
-          options: ['Option 1', 'Option 2'],
-          correctAnswers: [0],
-          points: 10
-        }
-      ],
-      isNew: true
-    });
-  };
-
   // Prompts for confirmation and deletes the specified exam if confirmed.
   const handleDeleteClick = async (examId) => {
     const confirmed = window.confirm('Are you sure you want to delete this exam?');
@@ -192,396 +118,437 @@ const TeacherDashboard = () => {
     try {
       await deleteExam(examId);
       setExams(exams.filter(exam => exam.id !== examId));
+      // Scroll back to the top of the container after deletion
+      const container = document.getElementById('main-scroll-container');
+      if (container) {
+        container.scrollTop = 0;
+      }
     } catch (error) {
       showError('Failed to delete exam: ' + (error.message || error));
     }
   };
 
-
-  // Persists the currently edited exam (either creating a new one or updating an existing one).
-  const handleSave = async () => {
-    setError('');
-    if (!editingExam.startDate || !editingExam.endDate) {
-      setError('Start date and End date are required.');
-      return;
+  const onSaveSuccess = (savedExam, isNew) => {
+    if (isNew) {
+      setExams((prev) => [...prev, savedExam]);
+    } else {
+      setExams((prev) => prev.map((e) => (e.id === savedExam.id ? savedExam : e)));
     }
-
-    const start = new Date(editingExam.startDate);
-    const end = new Date(editingExam.endDate);
-    const now = new Date();
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      setError('Invalid start or end date.');
-      return;
-    }
-
-    if (end <= start) {
-      setError('End date must be strictly after the start date.');
-      return;
-    }
-
-    // Start time cannot be in the past (with a 1-minute grace buffer for completion lag)
-    if (start.getTime() < now.getTime() - 60000) {
-      setError('Start time cannot be before the current time.');
-      return;
-    }
-
-    // Check if trying to edit an active or completed exam (except when creating)
-    if (!editingExam.isNew && editingExam.id) {
-      const originalExam = exams.find(e => e.id === editingExam.id);
-      if (originalExam) {
-        const origStatus = getExamStatus(originalExam);
-        if (origStatus === 'Published' || origStatus === 'Done') {
-          setError('Cannot edit an exam that is currently active or completed.');
-          return;
-        }
-      }
-    }
-
-    try {
-      let savedExam;
-      if (editingExam.isNew || !editingExam.id) {
-        const newExamData = { ...editingExam };
-        delete newExamData.isNew;
-        savedExam = await createExam(newExamData);
-        setExams([...exams, savedExam]);
-      } else {
-        savedExam = await updateExam(editingExam);
-        setExams(exams.map(exam =>
-          exam.id === savedExam.id ? savedExam : exam
-        ));
-      }
-
-      setEditingExam(null);
-      setError('');
-      showSuccess('Exam: "' + savedExam.title + '" saved successfully.');
-    } catch (err) {
-      setError('Failed to save: ' + (err.message || err));
-    }
+    setIsEditing(false);
+    setSelectedExam(null);
   };
 
+  const onCancel = () => {
+    setIsEditing(false);
+    setSelectedExam(null);
+  };
 
-
-  // Render view: Creating or editing an exam
-  if (editingExam) {
-    return (
-      <div className="container mt-4 mb-5">
-        <div className="card shadow rounded-4">
-          <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center p-4 rounded-top-4">
-            <h3>{editingExam.isNew ? 'Creating New Exam:' : 'Editing Exam:'} {editingExam.title}</h3>
-            <button className="btn btn-outline-light px-4" onClick={() => { setEditingExam(null); setError(''); }}>Back to List</button>
-          </div>
-          <div className="card-body px-5 py-4">
-            <div className="mb-4">
-              <h5 className="form-label mb-2">Exam Title</h5>
-              <input
-                className="form-control form-control-lg"
-                value={editingExam.title}
-                onChange={handleTitleChange}
-              />
-            </div>
-            <div className="row g-3 mb-4">
-              <div className="col-md-3 col-sm-6">
-                <label className="form-label mb-2">Duration (mins)</label>
-                <input
-                  type="number"
-                  min={1}
-                  className="form-control"
-                  value={editingExam.duration || 60}
-                  onChange={(e) => setEditingExam({ ...editingExam, duration: Number(e.target.value) })}
-                />
-              </div>
-              <div className="col-md-3 col-sm-6">
-                <label className="form-label mb-2">Pass Grade (%)</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  className="form-control"
-                  value={editingExam.passGrade || 50}
-                  onChange={(e) => setEditingExam({ ...editingExam, passGrade: Number(e.target.value) })}
-                />
-              </div>
-              <div className="col-md-3 col-sm-6">
-                <label className="form-label mb-2">Start Date & Time</label>
-                <input
-                  type="datetime-local"
-                  className="form-control"
-                  value={toDatetimeLocal(editingExam.startDate)}
-                  onChange={(e) => setEditingExam({
-                    ...editingExam,
-                    startDate: e.target.value ? new Date(e.target.value).toISOString() : ''
-                  })}
-                />
-              </div>
-              <div className="col-md-3 col-sm-6">
-                <label className="form-label mb-2">End Date & Time</label>
-                <input
-                  type="datetime-local"
-                  className="form-control"
-                  value={toDatetimeLocal(editingExam.endDate)}
-                  onChange={(e) => setEditingExam({
-                    ...editingExam,
-                    endDate: e.target.value ? new Date(e.target.value).toISOString() : ''
-                  })}
-                />
-              </div>
-            </div>
-
-            {(() => {
-              const totalPoints = editingExam.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0);
-              const pointsStatus = totalPoints === 100 ? 'success' : 'danger';
-              const pointsMessage = totalPoints === 100
-                ? 'Total points: 100 ✓'
-                : totalPoints > 100
-                  ? `Total points: ${totalPoints} (${totalPoints - 100} points over limit)`
-                  : `Total points: ${totalPoints} (${100 - totalPoints} points remaining)`;
-
-              return (
-                <div className={`alert alert-${pointsStatus} mb-4`}>
-                  <strong>{pointsMessage}</strong>
-                </div>
-              );
-            })()}
-
-            <h5 className="border-bottom pb-2 mb-3">Questions</h5>
-            {editingExam.questions.map((q, qIndex) => (
-              <div key={q.id} className="card mb-4 border-secondary rounded-4">
-                <div className="card-body bg-light rounded-4 p-4">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h6 className="mb-0">Question {qIndex + 1}</h6>
-                    <button className="btn btn-outline-danger btn-sm" onClick={() => handleRemoveQuestion(qIndex)}>Remove Question</button>
-                  </div>
-                  <div className="d-flex gap-3 mb-3">
-                    <input
-                      className="form-control"
-                      value={q.text}
-                      onChange={(e) => handleQuestionChange(qIndex, 'text', e.target.value)}
-                      placeholder="Enter question text"
-                    />
-                    <select
-                      className="form-select w-auto"
-                      value={q.type || 'multiple_choice'}
-                      onChange={(e) => {
-                        const newType = e.target.value;
-                        handleQuestionChange(qIndex, 'type', newType);
-                        if (newType === 'multiple_choice') {
-                          if (!q.options) {
-                            handleQuestionChange(qIndex, 'options', ['Option 1', 'Option 2']);
-                          }
-                          handleQuestionChange(qIndex, 'correctAnswers', q.correctAnswers || [0]);
-                          handleQuestionChange(qIndex, 'allowMultipleAnswers', q.allowMultipleAnswers || false);
-                        }
-                      }}
-                    >
-                      <option value="multiple_choice">Multiple Choice</option>
-                      <option value="open_ended">Open Ended</option>
-                    </select>
-                    <input
-                      type="number"
-                      min={0}
-                      className="form-control w-auto"
-                      style={{ maxWidth: '120px' }}
-                      placeholder="Points"
-                      value={q.points || 0}
-                      onChange={(e) => handleQuestionChange(qIndex, 'points', Number(e.target.value))}
-                    />
-                  </div>
-
-                  <div className="ms-3">
-                    {(!q.type || q.type === 'multiple_choice') ? (
-                      <>
-                        <div className="form-check form-switch mb-3">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id={`multi-answer-toggle-${q.id}`}
-                            checked={q.allowMultipleAnswers || false}
-                            onChange={(e) => {
-                              const allowMulti = e.target.checked;
-                              const currentAnswers = q.correctAnswers || [];
-                              const newAnswers = allowMulti
-                                ? currentAnswers.length > 0 ? currentAnswers : [0]
-                                : currentAnswers.length > 0 ? [currentAnswers[0]] : [0];
-                              handleQuestionChange(qIndex, 'allowMultipleAnswers', allowMulti);
-                              handleQuestionChange(qIndex, 'correctAnswers', newAnswers);
-                            }}
-                          />
-                          <label className="form-check-label" htmlFor={`multi-answer-toggle-${q.id}`}>
-                            Allow multiple correct answers
-                          </label>
-                        </div>
-                        <label className="form-label small text-muted">
-                          Options (Select the correct {q.allowMultipleAnswers ? 'answers' : 'answer'}):
-                        </label>
-                        {q.options?.map((opt, oIndex) => (
-                          <div key={oIndex} className="input-group mb-2">
-                            <div className="input-group-text">
-                              <input
-                                type="checkbox"
-                                className="form-check-input mt-0"
-                                checked={(q.correctAnswers || []).includes(oIndex)}
-                                onChange={(e) => {
-                                  const currentAnswers = q.correctAnswers || [];
-                                  let newAnswers;
-                                  if (q.allowMultipleAnswers) {
-                                    if (e.target.checked) {
-                                      newAnswers = [...currentAnswers, oIndex];
-                                    } else {
-                                      newAnswers = currentAnswers.filter(a => a !== oIndex);
-                                    }
-                                  } else {
-                                    newAnswers = e.target.checked ? [oIndex] : [];
-                                  }
-                                  handleQuestionChange(qIndex, 'correctAnswers', newAnswers);
-                                }}
-                              />
-                            </div>
-                            <input
-                              className="form-control"
-                              value={opt}
-                              onChange={(e) => handleOptionChange(qIndex, oIndex, e.target.value)}
-                            />
-                            <button
-                              className="btn btn-outline-secondary"
-                              onClick={() => handleRemoveOption(qIndex, oIndex)}
-                              disabled={q.options.length <= 2}
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        ))}
-                        <button className="btn btn-sm btn-link text-decoration-none p-0" onClick={() => handleAddOption(qIndex)}>
-                          + Add Option
-                        </button>
-                      </>
-                    ) : (
-                      <textarea
-                        className="form-control mt-2"
-                        disabled
-                        value="Student will write their answer here."
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            {error && (
-              <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                {error}
-                <button type="button" className="btn-close" onClick={() => setError('')} aria-label="Close"></button>
-              </div>
-            )}
-            <div className="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-              <button className="btn btn-outline-primary me-md-2" onClick={handleAddQuestion}>Add New Question</button>
-              {(() => {
-                const totalPoints = editingExam.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0);
-                return (
-                  <button
-                    className="btn btn-success px-5"
-                    onClick={handleSave}
-                    disabled={totalPoints !== 100}
-                  >
-                    {editingExam?.isNew ? 'Create Exam' : 'Save Changes'}
-                  </button>
-                );
-              })()}
-              <button className="btn btn-secondary px-4" onClick={() => { setEditingExam(null); setError(''); }}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const totalExams = exams.length;
+  const activeExams = exams.filter(e => {
+    const s = getExamStatus(e);
+    return s === 'Published' || s === 'Scheduled';
+  }).length;
+  const totalSubmissions = Object.values(submissionCounts).reduce((sum, count) => sum + count, 0);
+  const firstLetter = user?.name ? user.name.charAt(0).toUpperCase() : 'T';
 
   // Render view: Default main dashboard listing all exams
   return (
-    <div className="container mt-4 mb-5" >
-      <div className="card shadow rounded-4">
-        <div className="card-header bg-primary text-white p-4 rounded-top-4">
-          <h3>Teacher Dashboard</h3>
-        </div>
-        <div className="card-body px-5 py-4">
-          <h5 className="card-title mb-1">Manage Exams</h5>
-          <p className="text-muted mb-4">Welcome back, <strong>{user?.name || 'Teacher'}</strong>. Use this dashboard to manage exams, review student submissions, and publish grades.</p>
-          <p className="text-muted mb-4">Welcome back, <strong>{user?.name || 'Teacher'}</strong>. Use this dashboard to manage exams, review student submissions, and publish grades.</p>
-          {loading ? (
-            <div className="text-center my-5">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
+    <div className="container mt-2 mb-5 teacher-dashboard-container">
+      <style>{`
+        .teacher-dashboard-container {
+            animation: fadeInPortal 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        @keyframes fadeInPortal {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .portal-glass-card {
+            background: rgba(255, 255, 255, 0.6) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.45) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 15px 35px rgba(30, 41, 59, 0.04) !important;
+            transition: all 0.3s ease;
+        }
+
+        .welcome-header-card {
+            background: linear-gradient(135deg, #0f172a, #022c22) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-radius: 20px !important;
+            color: #ffffff;
+            box-shadow: 0 15px 30px rgba(15, 23, 42, 0.12) !important;
+        }
+
+        .welcome-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, #059669);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            text-align: center;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 25px;
+            border: 2.5px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+            flex-shrink: 0;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 8px 16px;
+            text-align: center;
+            flex: 0 0 auto;
+            min-width: 120px;
+        }
+        .stat-box-val {
+            font-size: 19px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+        .stat-box-lbl {
+            font-size: 10px;
+            color: #a7f3d0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        .exam-item-card {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-radius: 16px;
+            padding: 18px 24px;
+            margin-bottom: 12px;
+            transition: all 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .exam-item-card:hover {
+            transform: translateY(-2px);
+            background: #ffffff;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .status-pill {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .status-draft {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .status-scheduled {
+            background-color: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+            box-shadow: 0 0 10px rgba(217, 119, 6, 0.08);
+        }
+        .status-published {
+            background-color: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+            box-shadow: 0 0 10px rgba(5, 150, 105, 0.08);
+        }
+        .status-done {
+            background-color: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid #c7d2fe;
+            box-shadow: 0 0 10px rgba(79, 70, 229, 0.08);
+        }
+
+        .btn-action-green {
+            background: rgba(16, 185, 129, 0.06);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #059669;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-action-green:hover:not(:disabled) {
+            background: #10b981;
+            color: #ffffff;
+            border-color: #10b981;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15);
+        }
+
+        .btn-action-amber {
+            background: rgba(245, 158, 11, 0.06);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #d97706;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-action-amber:hover:not(:disabled) {
+            background: #f59e0b;
+            color: #ffffff;
+            border-color: #f59e0b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.15);
+        }
+
+        .btn-action-indigo {
+            background: rgba(79, 70, 229, 0.06);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            color: #4f46e5;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-action-indigo:hover:not(:disabled) {
+            background: #4f46e5;
+            color: #ffffff;
+            border-color: #4f46e5;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15);
+        }
+
+        .btn-action-blue {
+            background: rgba(59, 130, 246, 0.06);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #2563eb;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-action-blue:hover:not(:disabled) {
+            background: #3b82f6;
+            color: #ffffff;
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
+        }
+
+        .btn-action-rose {
+            background: rgba(244, 63, 94, 0.06);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            color: #e11d48;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-action-rose:hover:not(:disabled) {
+            background: #f43f5e;
+            color: #ffffff;
+            border-color: #f43f5e;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(244, 63, 94, 0.15);
+        }
+
+        .btn-action-green:disabled,
+        .btn-action-amber:disabled,
+        .btn-action-indigo:disabled,
+        .btn-action-blue:disabled,
+        .btn-action-rose:disabled {
+            background: rgba(148, 163, 184, 0.05);
+            border-color: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .dashboard-action-btn {
+            width: 160px;
+            text-align: center;
+            justify-content: center;
+        }
+
+        .btn-save-exam {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.18);
+            transition: all 0.2s ease;
+        }
+        .btn-save-exam:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+        }
+      `}</style>
+      
+      {/* 1. WELCOME & STATS BANNER */}
+      <div className="card welcome-header-card p-4 mb-4 border-0">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div className="col-md-7 d-flex align-items-center gap-3 text-start p-3">
+            <div className="welcome-avatar">{firstLetter}</div>
+            <div>
+              <h4 className="mb-1 fw-bold">Welcome back, {user?.name || 'Teacher'}!</h4>
+              <p className="mb-0" style={{ color: '#a7f3d0' }}>Teacher Dashboard | Manage exams and grade student submissions</p>
+            </div>
+          </div>
+          <div className="d-flex gap-2">
+            <div className="d-flex gap-3 justify-content-md-end justify-content-center flex-wrap p-3">
+              <div className="stat-box">
+                <div className="stat-box-val">{totalExams}</div>
+                <div className="stat-box-lbl">Total Exams</div>
               </div>
-              <p className="mt-2">Loading exams...</p>
+              <div className="stat-box">
+                <div className="stat-box-val">{activeExams}</div>
+                <div className="stat-box-lbl">Active</div>
+              </div>
+              <div className="stat-box">
+                <div className="stat-box-val">{totalSubmissions}</div>
+                <div className="stat-box-lbl">Submissions</div>
+              </div>
             </div>
-          ) : (
-            <div className="list-group">
-              {exams.map((exam) => (
-                <div
-                  key={exam.id}
-                  className="list-group-item list-group-item-action d-flex justify-content-between align-items-center flex-wrap gap-2"
-                >
-                  <div>
-                    <h6 className="mb-1 d-flex align-items-center gap-2">
-                      {exam.title}
-                      {(() => {
-                        const status = getExamStatus(exam);
-                        if (status === 'Published') {
-                          return <span className="badge bg-success">Published</span>;
-                        } else if (status === 'Scheduled') {
-                          return <span className="badge bg-warning text-dark">Scheduled</span>;
-                        } else if (status === 'Done') {
-                          return <span className="badge bg-secondary">Done</span>;
-                        } else {
-                          return <span className="badge bg-dark">Draft</span>;
-                        }
-                      })()}
-                    </h6>
-                    <small className="text-muted">
-                      ID: {exam.id} | {exam.questions.length} Questions | {exam.duration || 60} mins
-                      {exam.startDate && ` | Start: ${formatDate(exam.startDate)}`}
-                      {exam.endDate && ` | End: ${formatDate(exam.endDate)}`}
-                    </small>
-                  </div>
-                  <div className="d-flex gap-3 flex-wrap">
-                    {getExamStatus(exam) === 'Done' && (
-                      <button
-                        className={`btn btn-sm ${submissionCounts[exam.id] === 0 ? 'btn-secondary disabled' : exam.areGradesPublished ? 'btn-outline-warning' : 'btn-outline-success'}`}
-                        onClick={() => handleTogglePublishGrades(exam)}
-                        disabled={submissionCounts[exam.id] === 0}
-                        title={submissionCounts[exam.id] === 0 ? 'No student submissions yet' : exam.areGradesPublished ? 'Click to unpublish grades' : 'Click to publish grades'}
-                      >
-                        {exam.areGradesPublished ? 'Unpublish Grades' : 'Publish Grades'}
-                      </button>
-                    )}
-                    <button
-                      className="btn btn-sm btn-outline-info"
-                      onClick={() => navigate(`/teacher/exam/${exam.id}/scores`)}
-                    >
-                      View Scores
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => handleEditClick(exam)}
-                      disabled={getExamStatus(exam) === 'Published' || getExamStatus(exam) === 'Done'}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => handleDeleteClick(exam.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="mt-4">
-            <button className="btn btn-success" onClick={handleCreateClick}>Create New Exam</button>
           </div>
         </div>
       </div>
+
+      {/* 2. EXAMS MANAGER LIST OR EDITOR OR SCORES VIEWER OR GRADING VIEWER */}
+      {gradingSubmissionId ? (
+        <GradeSubmissionViewer
+          submissionId={gradingSubmissionId}
+          onBack={() => setGradingSubmissionId(null)}
+        />
+      ) : isEditing ? (
+        <ExamEditor
+          exam={selectedExam}
+          exams={exams}
+          onSaveSuccess={onSaveSuccess}
+          onCancel={onCancel}
+        />
+      ) : viewingScoresExamId ? (
+        <ExamScoresViewer
+          examId={viewingScoresExamId}
+          onBack={() => setViewingScoresExamId(null)}
+          onGrade={(subId) => setGradingSubmissionId(subId)}
+        />
+      ) : (
+        <div className="card portal-glass-card border-0">
+          <div className="card-body p-4 p-md-5">
+            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+              <div>
+                <h5 className="fw-bold mb-1" style={{ color: '#1e293b' }}>Manage Exams</h5>
+                <p className="text-muted small mb-0">Create, edit, schedule, or view submissions for all academic tests</p>
+              </div>
+              <button className="btn btn-save-exam py-2 px-4 rounded-3" onClick={handleCreateClick}>
+                + Create New Exam
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="text-center my-5 py-4">
+                <div className="spinner-border text-success" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="text-muted mt-2 small">Loading exams list...</p>
+              </div>
+            ) : exams.length === 0 ? (
+              <div className="text-center my-5 py-4">
+                <p className="text-muted mb-3">No exams found. Click "Create New Exam" to get started.</p>
+              </div>
+            ) : (
+              <div className="exams-list-container">
+                {exams.map((exam) => {
+                  const status = getExamStatus(exam);
+                  const subCount = submissionCounts[exam.id] || 0;
+
+                  return (
+                    <div key={exam.id} className="exam-item-card">
+                      <div className="d-flex row gap-1">
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                          <h6 className="fw-bold mb-0" style={{ color: '#1e293b', fontSize: '15px' }}>
+                            {exam.title}
+                          </h6>
+                          {status === 'Published' && <span className="status-pill status-published">Published</span>}
+                          {status === 'Scheduled' && <span className="status-pill status-scheduled">Scheduled</span>}
+                          {status === 'Done' && <span className="status-pill status-done">Done</span>}
+                          {status === 'Draft' && <span className="status-pill status-draft">Draft</span>}
+                        </div>
+
+                        <div className="d-flex align-items-center gap-3 text-secondary flex-wrap mt-1" style={{ fontSize: '12px' }}>
+                          <span className="d-flex align-items-center">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="me-1"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" /></svg>
+                            ID: {exam.id}
+                          </span>
+                          <span className="d-flex align-items-center">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="me-1"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>
+                            {exam.questions.length} Questions
+                          </span>
+                          <span className="d-flex align-items-center">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="me-1"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                            {exam.duration || 60} mins
+                          </span>
+                          {exam.startDate && (
+                            <span className="d-flex align-items-center">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="me-1"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                              Start: {formatDate(exam.startDate)}
+                            </span>
+                          )}
+                          {exam.endDate && (
+                            <span className="d-flex align-items-center">
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="me-1"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                              End: {formatDate(exam.endDate)}
+                            </span>
+                          )}
+                          <span className="d-flex align-items-center">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="me-1"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /></svg>
+                            Submissions: {subCount}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="d-flex gap-2 flex-wrap align-items-center justify-content-between">
+                        <button
+                          className={`btn btn-sm py-1.5 px-3 rounded-3 dashboard-action-btn ${exam.areGradesPublished ? 'btn-action-amber' : 'btn-action-green'}`}
+                          onClick={() => handleTogglePublishGrades(exam)}
+                          disabled={status !== 'Done' || subCount === 0}
+                          title={status !== 'Done' ? 'Grades can only be published once the exam has finished' : subCount === 0 ? 'No student submissions yet' : exam.areGradesPublished ? 'Click to unpublish grades' : 'Click to publish grades'}
+                        >
+                          {exam.areGradesPublished ? 'Unpublish Grades' : 'Publish Grades'}
+                        </button>
+                        <button
+                          className="btn btn-sm btn-action-indigo py-1.5 px-3 rounded-3 dashboard-action-btn"
+                          onClick={() => setViewingScoresExamId(exam.id)}
+                        >
+                          View Scores
+                        </button>
+                        <button
+                          className="btn btn-sm btn-action-blue py-1.5 px-3 rounded-3 dashboard-action-btn"
+                          onClick={() => handleEditClick(exam)}
+                          disabled={status === 'Published' || status === 'Done'}
+                          title={status === 'Published' || status === 'Done' ? 'Cannot edit published or completed exams' : 'Edit exam'}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-sm btn-action-rose py-1.5 px-3 rounded-3 dashboard-action-btn"
+                          onClick={() => handleDeleteClick(exam.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 export default TeacherDashboard;
