@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentPortal from './pages/StudentPortal';
@@ -15,7 +15,7 @@ import Home from './pages/Home';
  * Layout content component that has access to React Router's location context.
  * Conditionally hides the footer on exam-taking pages.
  */
-function AppContent() {
+const AppContent = () => {
   const location = useLocation();
   const hideFooter = location.pathname.startsWith('/take-exam');
 
@@ -91,16 +91,16 @@ function AppContent() {
  * Configures React Router, sets up global context providers (AuthProvider, DialogProvider),
  * and defines the main layout and route mapping for the application.
  */
-function App() {
+const App = () => {
   return (
-    <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <HashRouter>
       <ScrollToTop />
       <AuthProvider>
         <DialogProvider>
           <AppContent />
         </DialogProvider>
       </AuthProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

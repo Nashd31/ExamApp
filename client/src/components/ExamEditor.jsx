@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { createExam, updateExam, getCoursesByTeacher } from '../api/examService';
 import { showSuccess } from '../services/notify';
-import { getExamStatus, toDatetimeLocal } from '../utils/examUtils';
+import { getExamStatus } from '../utils/examUtils';
 import { useAuth } from '../hooks/useAuth';
+import { logError } from '../services/logger';
+import CustomDateTimePicker from './CustomDateTimePicker';
 
 /**
  * ExamEditor Component
@@ -102,7 +104,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             return prev;
           });
         } catch (err) {
-          console.error("Failed to fetch courses:", err);
+          logError("Failed to fetch courses", err.message);
         }
       }
     };
@@ -243,12 +245,14 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
   const totalPoints = editingExam.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0);
 
   return (
-    <div className="card portal-glass-card border-0 overflow-hidden">
+    <div className="card portal-glass-card border-0">
       <style>{`
         .editor-header-card {
-            background: linear-gradient(135deg, #10b981, #059669) !important;
+            background: var(--theme-gradient) !important;
             color: #ffffff;
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1) !important;
+            box-shadow: 0 10px 25px var(--theme-glow) !important;
+            border-top-left-radius: 20px !important;
+            border-top-right-radius: 20px !important;
         }
 
         .custom-dropdown-container {
@@ -272,9 +276,9 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             text-align: left;
         }
         .custom-dropdown-trigger:focus, .custom-dropdown-trigger.open {
-            border-color: #10b981;
+            border-color: var(--theme-color);
             background: #ffffff;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+            box-shadow: 0 0 0 3px var(--theme-glow);
             outline: none;
         }
         .custom-dropdown-menu {
@@ -312,11 +316,11 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             align-items: center;
         }
         .custom-dropdown-item:hover {
-            background-color: rgba(16, 185, 129, 0.08);
-            color: #059669;
+            background-color: var(--theme-glow);
+            color: var(--theme-color);
         }
         .custom-dropdown-item.active {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: var(--theme-gradient);
             color: #ffffff;
             font-weight: 600;
         }
@@ -327,13 +331,13 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             background: rgba(255, 255, 255, 0.7);
             font-size: 14px;
             transition: all 0.3s ease;
+            accent-color: var(--theme-color);
         }
         .modern-form-control:focus {
-            border-color: #10b981;
+            border-color: var(--theme-color);
             background: #ffffff;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+            box-shadow: 0 0 0 3px var(--theme-glow);
         }
-
         .points-progress-card {
             background: rgba(255, 255, 255, 0.85);
             border: 1px solid rgba(148, 163, 184, 0.15);
@@ -354,8 +358,8 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             transition: width 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), background-color 0.3s ease;
         }
         .bg-progress-success {
-            background: linear-gradient(90deg, #10b981, #059669);
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+            background: var(--theme-gradient);
+            box-shadow: 0 0 8px var(--theme-glow);
         }
         .bg-progress-warning {
             background: linear-gradient(90deg, #f59e0b, #d97706);
@@ -374,8 +378,8 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             transition: all 0.25s ease;
         }
         .question-creator-card:hover {
-            border-color: rgba(16, 185, 129, 0.25) !important;
-            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.03) !important;
+            border-color: var(--theme-glow) !important;
+            box-shadow: 0 6px 18px var(--theme-glow) !important;
         }
         .question-card-header {
             background: rgba(148, 163, 184, 0.03) !important;
@@ -384,12 +388,12 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
         }
 
         .form-check-input:checked {
-            background-color: #10b981 !important;
-            border-color: #10b981 !important;
+            background-color: var(--theme-color) !important;
+            border-color: var(--theme-color) !important;
         }
         .form-check-input:focus {
-            border-color: #10b981 !important;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12) !important;
+            border-color: var(--theme-color) !important;
+            box-shadow: 0 0 0 3px var(--theme-glow) !important;
         }
 
         .option-input-group {
@@ -401,8 +405,8 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             width: 100%;
         }
         .option-input-group:focus-within {
-            border-color: #10b981;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+            border-color: var(--theme-color);
+            box-shadow: 0 0 0 3px var(--theme-glow);
         }
         .option-group-text {
             background-color: rgba(148, 163, 184, 0.04);
@@ -446,7 +450,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
         }
 
         .btn-add-option {
-            color: #10b981;
+            color: var(--theme-color);
             font-size: 13px;
             font-weight: 600;
             text-decoration: none;
@@ -460,35 +464,35 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             border-radius: 6px;
         }
         .btn-add-option:hover {
-            color: #059669;
-            background-color: rgba(16, 185, 129, 0.05);
+            color: var(--theme-color);
+            background-color: var(--theme-glow);
         }
 
         .btn-add-question {
-            background: rgba(16, 185, 129, 0.06);
-            border: 1px dashed rgba(16, 185, 129, 0.4);
-            color: #059669;
+            background: var(--theme-glow);
+            border: 1px dashed var(--theme-color);
+            color: var(--theme-color);
             font-weight: 600;
             transition: all 0.2s ease;
         }
         .btn-add-question:hover {
-            background: rgba(16, 185, 129, 0.12);
-            border-color: #10b981;
+            background: var(--theme-glow);
+            border-color: var(--theme-color);
             border-style: solid;
             transform: translateY(-1px);
         }
 
         .btn-save-exam {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: var(--theme-gradient);
             border: none;
             color: white;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.18);
+            box-shadow: 0 4px 12px var(--theme-glow);
             transition: all 0.2s ease;
         }
         .btn-save-exam:hover:not(:disabled) {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+            box-shadow: 0 6px 16px var(--theme-glow);
         }
         .btn-save-exam:disabled {
             background: #cbd5e1;
@@ -554,7 +558,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             <label className="form-label small fw-semibold text-secondary mb-1.5">Associated Course</label>
             {courses === null ? (
               <div className="text-muted small py-2">
-                <span className="spinner-border spinner-border-sm me-2 text-success" role="status" style={{ width: '1rem', height: '1rem' }}></span>
+                <span className="spinner-border spinner-border-sm me-2" role="status" style={{ width: '1rem', height: '1rem', color: 'var(--theme-color)' }}></span>
                 Loading courses...
               </div>
             ) : courses.length === 0 ? (
@@ -622,26 +626,23 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
               />
             </div>
             <div className="col-md-3 col-sm-6">
-              <label className="form-label small fw-semibold text-secondary mb-1.5">Start Date & Time</label>
-              <input
-                type="datetime-local"
-                className="form-control modern-form-control"
-                value={toDatetimeLocal(editingExam.startDate)}
-                onChange={(e) => setEditingExam({
+              <CustomDateTimePicker
+                label="Start Date & Time"
+                value={editingExam.startDate}
+                onChange={(val) => setEditingExam({
                   ...editingExam,
-                  startDate: e.target.value ? new Date(e.target.value).toISOString() : ''
+                  startDate: val
                 })}
               />
             </div>
             <div className="col-md-3 col-sm-6">
-              <label className="form-label small fw-semibold text-secondary mb-1.5">End Date & Time</label>
-              <input
-                type="datetime-local"
-                className="form-control modern-form-control"
-                value={toDatetimeLocal(editingExam.endDate)}
-                onChange={(e) => setEditingExam({
+              <CustomDateTimePicker
+                label="End Date & Time"
+                value={editingExam.endDate}
+                alignRight={true}
+                onChange={(val) => setEditingExam({
                   ...editingExam,
-                  endDate: e.target.value ? new Date(e.target.value).toISOString() : ''
+                  endDate: val
                 })}
               />
             </div>

@@ -8,8 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "vite build --base=/ExamApp/ && gh-pages -d dist"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",

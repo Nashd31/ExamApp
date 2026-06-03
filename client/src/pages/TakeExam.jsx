@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getExamById, submitExam } from '../api/examService';
@@ -23,6 +23,11 @@ const TakeExam = () => {
     const [submitted, setSubmitted] = useState(false);
 
 
+    const cleanExamSession = useCallback(() => {
+        localStorage.removeItem(`examAnswers_${id}`);
+        localStorage.removeItem(`examEndTime_${id}`);
+    }, [id]);
+
     // Fetches the exam data and initializes the countdown timer.
     useEffect(() => {
         const loadExam = async () => {
@@ -46,8 +51,25 @@ const TakeExam = () => {
                     }
                 }
                 setExam(data);
-                // initialize timer when exam loaded
-                const seconds = (data.duration && Number(data.duration) > 0) ? Number(data.duration) * 60 : 60 * 60;
+
+                // Restore saved answers if they exist
+                const savedAnswers = localStorage.getItem(`examAnswers_${id}`);
+                if (savedAnswers) {
+                    setAnswers(JSON.parse(savedAnswers));
+                }
+
+                // Restore or calculate timer
+                const savedEndTime = localStorage.getItem(`examEndTime_${id}`);
+                let seconds;
+                if (savedEndTime) {
+                    const remainingMs = Number(savedEndTime) - Date.now();
+                    seconds = Math.max(0, Math.floor(remainingMs / 1000));
+                } else {
+                    const durationSeconds = (data.duration && Number(data.duration) > 0) ? Number(data.duration) * 60 : 60 * 60;
+                    const endTime = Date.now() + durationSeconds * 1000;
+                    localStorage.setItem(`examEndTime_${id}`, endTime.toString());
+                    seconds = durationSeconds;
+                }
                 setTimeLeft(seconds);
             } catch (err) {
                 setError(err?.message || 'Failed to load exam.');
@@ -92,17 +114,19 @@ const TakeExam = () => {
             const autoSubmit = async () => {
                 try {
                     setSubmitted(true);
-                    await submitExam(exam.id, user?.name || 'Student', answers);
+                    await submitExam(exam.id, user?.name || 'Student', answers, user?.id);
+                    cleanExamSession();
                     showSuccess('Time is up! Exam auto-submitted. Results will be available after your teacher publishes grades.');
                     navigate('/student');
                 } catch (err) {
+                    cleanExamSession();
                     showError(err?.message || 'Auto-submit failed.');
                     navigate('/student');
                 }
             };
             autoSubmit();
         }
-    }, [timeLeft, exam, submitted, answers, navigate, user]);
+    }, [timeLeft, exam, submitted, answers, navigate, user, cleanExamSession]);
 
     /**
      * Implements basic browser lockdown features:
@@ -124,8 +148,12 @@ const TakeExam = () => {
         };
 
         const onKeyDown = (e) => {
-            // block common refresh/close keys
-            if (e.key === 'F5' || (e.ctrlKey && (e.key === 'r' || e.key === 'R' || e.key === 'w' || e.key === 'W'))) {
+            // block common refresh/close keys (F5, Ctrl+R, Cmd+R, etc.)
+            if (
+                e.key === 'F5' || 
+                ((e.ctrlKey || e.metaKey) && (e.key === 'r' || e.key === 'R')) || 
+                (e.ctrlKey && (e.key === 'w' || e.key === 'W'))
+            ) {
                 e.preventDefault();
             }
         };
@@ -164,10 +192,14 @@ const TakeExam = () => {
 
     // Updates the local state when the student changes an answer.
     const handleAnswerChange = (questionId, value) => {
-        setAnswers((prev) => ({
-            ...prev,
-            [questionId]: value,
-        }));
+        setAnswers((prev) => {
+            const nextAnswers = {
+                ...prev,
+                [questionId]: value,
+            };
+            localStorage.setItem(`examAnswers_${id}`, JSON.stringify(nextAnswers));
+            return nextAnswers;
+        });
     };
 
 
@@ -182,7 +214,8 @@ const TakeExam = () => {
         if (!confirmed) return;
 
         try {
-            await submitExam(exam.id, user?.name || 'Student', answers);
+            await submitExam(exam.id, user?.name || 'Student', answers, user?.id);
+            cleanExamSession();
             showSuccess('Exam submitted successfully! Your results will be available after the teacher publishes the grades.');
             navigate('/student');
         } catch (err) {

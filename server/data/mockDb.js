@@ -1,0 +1,107 @@
+const mockDb = {
+  courses: [
+    { id: "c1", name: "JavaScript Advanced", code: "JS-301", teacherId: "u1" },
+    { id: "c2", name: "React Web Apps", code: "REACT-102", teacherId: "u1" },
+    { id: "c3", name: "Node.js Basics", code: "NODE-101", teacherId: "u1" }
+  ],
+  exams: [
+    {
+      id: "1",
+      title: "JavaScript Basics",
+      courseId: "c1",
+      startDate: "2026-05-01T10:00:00.000Z",
+      endDate: "2026-05-01T12:00:00.000Z",
+      areGradesPublished: false,
+      duration: 45,
+      passGrade: 60,
+      questions: [
+        { id: "q1", type: "multiple_choice", text: "What is a closure?", options: ["A function", "A variable", "A loop"], allowMultipleAnswers: false, correctAnswers: [0], points: 33 },
+        { id: "q2", type: "multiple_choice", text: "What is 'NaN'?", options: ["Not a Number", "Now and Next", "New and Null"], allowMultipleAnswers: false, correctAnswers: [0], points: 33 },
+        { id: "q5", type: "open_ended", text: "Explain the difference between let, const, and var.", points: 34 }
+      ]
+    },
+    {
+      id: "2",
+      title: "React Fundamentals",
+      courseId: "c2",
+      startDate: "2026-06-01T10:00:00.000Z",
+      endDate: "2026-06-01T20:00:00.000Z",
+      areGradesPublished: false,
+      duration: 90,
+      passGrade: 55,
+      questions: [
+        { id: "q3", type: "multiple_choice", text: "What is a Hook?", options: ["A React feature", "A CSS selector", "A HTML tag"], allowMultipleAnswers: false, correctAnswers: [0], points: 50 },
+        { id: "q4", type: "multiple_choice", text: "What is JSX?", options: ["Syntax extension", "JavaScript XML", "Both"], allowMultipleAnswers: false, correctAnswers: [2], points: 50 }
+      ]
+    },
+    {
+      id: "3",
+      title: "Node.js Basics",
+      courseId: "c3",
+      startDate: "2026-07-01T10:00:00.000Z",
+      endDate: "2026-07-01T12:00:00.000Z",
+      areGradesPublished: false,
+      duration: 60,
+      passGrade: 50,
+      questions: [
+        { id: "q6", type: "multiple_choice", text: "What module is used to serve web pages in Node?", options: ["http", "fs", "path"], allowMultipleAnswers: false, correctAnswers: [0], points: 50 },
+        { id: "q7", type: "multiple_choice", text: "What command initializes npm project?", options: ["npm start", "npm init", "npm install"], allowMultipleAnswers: false, correctAnswers: [1], points: 50 }
+      ]
+    }
+  ],
+  users: [
+    {
+      id: "u1",
+      email: "teacher@test.com",
+      password: "123",
+      name: "Test Teacher",
+      role: "teacher"
+    },
+    {
+      id: "u2",
+      email: "student@test.com",
+      password: "123",
+      name: "Test Student",
+      role: "student",
+      enrolledCourses: ["c1", "c2", "c3"]
+    },
+    {
+      id: "u3",
+      email: "john@test.com",
+      password: "123",
+      name: "John Doe",
+      role: "student",
+      enrolledCourses: ["c1", "c2", "c3"]
+    }
+  ],
+  submissions: [
+    {
+      id: "sub1",
+      studentName: "Test Student",
+      examId: "1",
+      score: 50,
+      answers: {
+        q1: [0],
+        q2: [1],
+        q5: "var is function-scoped while let and const are block-scoped."
+      },
+      manualGrades: {},
+      submittedAt: "2026-05-01T10:45:00.000Z"
+    },
+    {
+      id: "sub2",
+      studentName: "John Doe",
+      examId: "1",
+      score: 100,
+      answers: {
+        q1: [0],
+        q2: [0],
+        q5: "They are different variable declarations."
+      },
+      manualGrades: {},
+      submittedAt: "2026-05-01T11:15:00.000Z"
+    }
+  ]
+};
+
+module.exports = mockDb;

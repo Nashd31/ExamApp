@@ -10,6 +10,8 @@ const config = {
     STORAGE_PREFIX: 'examApp_',
     API_TIMEOUT: 5000,
     MAX_RETRIES: 3,
+    USE_SERVER_API: true,
+    API_BASE_URL: 'http://localhost:5000/api',
 };
 
 export default config;
