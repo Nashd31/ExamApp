@@ -48,6 +48,7 @@ export const register = (name, email, password, role) => {
                 email,
                 password,
                 role,
+                ...(role === 'student' ? { enrolledCourses: [] } : {})
             };
 
             mockDb.users.push(newUser);

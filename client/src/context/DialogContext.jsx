@@ -55,6 +55,13 @@ const VARIANTS = {
     border: '#c4b5fd',
     label: 'Confirm',
   },
+  greenConfirm: {
+    icon: '?',
+    color: '#10b981',
+    bg: 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
+    border: '#6ee7b7',
+    label: 'Confirm',
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -73,10 +80,10 @@ export function DialogProvider({ children }) {
   }, []);
 
   /** Show a confirm modal. Resolves to true (Confirm) or false (Cancel). */
-  const showConfirm = useCallback((message, detail) => {
+  const showConfirm = useCallback((message, detail, variant = 'confirm') => {
     return new Promise((resolve) => {
       resolveRef.current = resolve;
-      setDialog({ type: 'confirm', variant: 'confirm', message, detail });
+      setDialog({ type: 'confirm', variant, message, detail });
     });
   }, []);
 

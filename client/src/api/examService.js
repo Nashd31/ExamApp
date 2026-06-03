@@ -96,13 +96,24 @@ export const deleteExam = (id) => {
  * Open-ended questions are currently excluded from automatic grading.
  * Generates a submission record and saves it to local storage.
  */
-export const submitExam = (examId, studentName, studentAnswers) => {
+export const submitExam = (examId, studentName, studentAnswers, studentId = null) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const exam = mockDb.exams.find((e) => e.id === examId);
       if (!exam) {
         reject(new Error('Exam not found'));
         return;
+      }
+
+      const student = studentId 
+        ? mockDb.users.find(u => u.id === studentId)
+        : mockDb.users.find(u => u.name === studentName);
+
+      if (student && exam.courseId) {
+        student.enrolledCourses = student.enrolledCourses || [];
+        if (!student.enrolledCourses.includes(exam.courseId)) {
+          student.enrolledCourses.push(exam.courseId);
+        }
       }
 
       const questions = exam.questions || [];
