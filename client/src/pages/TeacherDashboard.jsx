@@ -263,7 +263,7 @@ const TeacherDashboard = () => {
       setLoading(true);
       await deleteCourseApi(courseId);
       showSuccess(`Course "${courseName}" deleted successfully.`);
-      
+
       const nextCourses = courses.filter(c => c.id !== courseId);
       if (nextCourses.length > 0) {
         setSelectedCourseId(nextCourses[0].id);
@@ -315,7 +315,8 @@ const TeacherDashboard = () => {
         }
 
         .welcome-header-card {
-            background: linear-gradient(135deg, #0f172a, var(--theme-color)) !important;
+            background: linear-gradient(135deg, #0f172a, #0f172a) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
             border-radius: 20px !important;
             color: #ffffff;
             box-shadow: 0 15px 30px rgba(15, 23, 42, 0.12) !important;

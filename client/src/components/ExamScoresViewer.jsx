@@ -337,6 +337,28 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
   const [loading, setLoading] = useState(true);
   const [showCharts, setShowCharts] = useState(false);
 
+  const getGradingStatus = (sub) => {
+    if (!exam || !exam.questions) return { text: 'Unknown', className: 'review-pending' };
+    
+    const openEndedQuestions = exam.questions.filter(q => q.type === 'open_ended');
+    if (openEndedQuestions.length === 0) {
+      return { text: 'Auto-Graded', className: 'review-auto' };
+    }
+    
+    const manualGrades = sub.manualGrades || {};
+    const ungradedCount = openEndedQuestions.filter((q) => {
+      const idx = exam.questions.findIndex(eq => eq.id === q.id);
+      const key = q.id || idx;
+      return manualGrades[key] === undefined || manualGrades[key] === '';
+    }).length;
+    
+    if (ungradedCount === 0) {
+      return { text: 'Graded', className: 'review-graded' };
+    } else {
+      return { text: `Pending (${ungradedCount} left)`, className: 'review-pending' };
+    }
+  };
+
   useEffect(() => {
     const fetchScoresData = async () => {
       try {
@@ -468,6 +490,30 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
             color: #ef4444;
             border: 1px solid #fca5a5;
         }
+        .review-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3.5px 9px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+        }
+        .review-graded {
+            background-color: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+        .review-pending {
+            background-color: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+        .review-auto {
+            background-color: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid #c7d2fe;
+        }
 
         .theme-text {
             color: var(--theme-color) !important;
@@ -566,6 +612,7 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
                   <th>Submission Date</th>
                   <th>Score</th>
                   <th>Status</th>
+                  <th>Review Status</th>
                   <th style={{ textAlign: 'right' }}>Action</th>
                 </tr>
               </thead>
@@ -581,6 +628,16 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
                       ) : (
                         <span className="score-badge score-fail">Failed</span>
                       )}
+                    </td>
+                    <td>
+                      {(() => {
+                        const status = getGradingStatus(sub);
+                        return (
+                          <span className={`review-badge ${status.className}`}>
+                            {status.text}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <button

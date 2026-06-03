@@ -140,7 +140,6 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
         }
         .grading-header-card {
             background: linear-gradient(135deg, #0f172a, var(--theme-color)) !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
             border-radius: 20px 20px 0 0 !important;
             box-shadow: 0 10px 30px var(--theme-glow) !important;
         }
