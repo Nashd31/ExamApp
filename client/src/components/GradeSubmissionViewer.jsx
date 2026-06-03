@@ -103,7 +103,7 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
     return (
       <div className="card portal-glass-card border-0">
         <div className="card-body p-5 text-center">
-          <div className="spinner-border text-success" role="status">
+          <div className="spinner-border" role="status" style={{ color: 'var(--theme-color)' }}>
             <span className="visually-hidden">Loading...</span>
           </div>
           <p className="text-muted mt-2 small">Loading grading record...</p>
@@ -139,10 +139,10 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
             to { opacity: 1; transform: translateY(0); }
         }
         .grading-header-card {
-            background: linear-gradient(135deg, #0f172a, #022c22) !important;
+            background: linear-gradient(135deg, #0f172a, var(--theme-color)) !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             border-radius: 20px 20px 0 0 !important;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+            box-shadow: 0 10px 30px var(--theme-glow) !important;
         }
         .grading-body-card {
             background: rgba(255, 255, 255, 0.6) !important;
@@ -157,7 +157,7 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
             width: 52px;
             height: 52px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: var(--theme-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -165,7 +165,7 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
             font-weight: 800;
             font-size: 24px;
             border: 2.5px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 8px 16px var(--theme-glow);
             flex-shrink: 0;
         }
         .grading-score-badge {
@@ -194,8 +194,8 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
         .question-grade-card:hover {
             transform: translateY(-1px);
             background: #ffffff;
-            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.04);
-            border-color: rgba(16, 185, 129, 0.25);
+            box-shadow: 0 10px 25px var(--theme-glow);
+            border-color: var(--theme-color);
         }
         .grade-input-box {
             border-radius: 10px;
@@ -208,34 +208,33 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
         }
         .grade-input-box:focus {
             outline: none;
-            border-color: #10b981;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+            border-color: var(--theme-color);
+            box-shadow: 0 0 0 3px var(--theme-glow);
         }
         .teacher-notes-box {
             transition: all 0.2s ease;
         }
         .teacher-notes-box:focus {
             outline: none;
-            border-color: #10b981;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+            border-color: var(--theme-color);
+            box-shadow: 0 0 0 3px var(--theme-glow);
         }
         .btn-grade-save {
-            background: #10b981;
+            background: var(--theme-gradient);
             border: none;
             color: #ffffff;
             font-weight: 600;
             padding: 7px 18px;
             border-radius: 10px;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15);
+            box-shadow: 0 4px 10px var(--theme-glow);
             display: inline-flex;
             align-items: center;
             gap: 6px;
         }
         .btn-grade-save:hover:not(:disabled) {
-            background: #059669;
             transform: translateY(-1px);
-            box-shadow: 0 6px 14px rgba(16, 185, 129, 0.22);
+            box-shadow: 0 6px 14px var(--theme-glow);
         }
         .btn-grade-save:disabled {
             background: #94a3b8;
@@ -312,7 +311,7 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
                         <span className="badge bg-secondary me-2">Q{index + 1}</span>
                         {q.text}
                       </h5>
-                      <span className="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5" style={{ fontSize: '12px' }}>
+                      <span className="badge border rounded-pill px-3 py-1.5" style={{ fontSize: '12px', backgroundColor: 'var(--theme-glow)', color: 'var(--theme-color)', borderColor: 'var(--theme-color)' }}>
                         {q.points} Points Max
                       </span>
                     </div>

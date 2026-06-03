@@ -57,3 +57,28 @@ export const register = (name, email, password, role) => {
         }, DELAY);
     });
 };
+
+/**
+ * Simulates updating a user profile in the mock database.
+ */
+export const updateUserProfile = (userId, name, password, avatar, themeColor) => {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const userIndex = mockDb.users.findIndex((u) => u.id === userId);
+            if (userIndex === -1) {
+                return reject(new Error('User not found'));
+            }
+
+            const user = mockDb.users[userIndex];
+            user.name = name;
+            if (password) {
+                user.password = password;
+            }
+            user.avatar = avatar;
+            user.themeColor = themeColor;
+
+            saveToStorage(mockDb);
+            resolve(omitPassword(user));
+        }, DELAY);
+    });
+};

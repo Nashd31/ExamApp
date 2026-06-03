@@ -15,7 +15,7 @@ import Home from './pages/Home';
  * Layout content component that has access to React Router's location context.
  * Conditionally hides the footer on exam-taking pages.
  */
-function AppContent() {
+const AppContent = () => {
   const location = useLocation();
   const hideFooter = location.pathname.startsWith('/take-exam');
 
@@ -91,7 +91,7 @@ function AppContent() {
  * Configures React Router, sets up global context providers (AuthProvider, DialogProvider),
  * and defines the main layout and route mapping for the application.
  */
-function App() {
+const App = () => {
   return (
     <HashRouter>
       <ScrollToTop />

@@ -49,13 +49,13 @@ const ExamLineChart = ({ submissions, passGrade }) => {
       <defs>
         {/* Glowing stroke gradient */}
         <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#10b981" />
-          <stop offset="100%" stopColor="#06b6d4" />
+          <stop offset="0%" stopColor="var(--theme-color)" />
+          <stop offset="100%" stopColor="var(--theme-color)" stopOpacity="0.5" />
         </linearGradient>
         {/* Shaded area gradient */}
         <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+          <stop offset="0%" stopColor="var(--theme-color)" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="var(--theme-color)" stopOpacity="0.0" />
         </linearGradient>
       </defs>
 
@@ -150,8 +150,8 @@ const ExamLineChart = ({ submissions, passGrade }) => {
               cx={p.x}
               cy={p.y}
               r={isHovered ? "7" : "5"}
-              fill={isHovered ? (isPassed ? "#10b981" : "#ef4444") : "#ffffff"}
-              stroke={isPassed ? "#10b981" : "#ef4444"}
+              fill={isHovered ? (isPassed ? "var(--theme-color)" : "#ef4444") : "#ffffff"}
+              stroke={isPassed ? "var(--theme-color)" : "#ef4444"}
               strokeWidth="3"
               style={{ transition: 'all 0.15s ease-in-out', pointerEvents: 'none' }}
             />
@@ -256,7 +256,7 @@ const ExamDonutChart = ({ passPercent, failPercent, passCount, failCount, highes
               cy="60"
               r={radius}
               fill="transparent"
-              stroke="#10b981"
+              stroke="var(--theme-color)"
               strokeWidth={strokeWidth}
               strokeDasharray={`${passDash} ${circumference}`}
               strokeDashoffset="0"
@@ -313,14 +313,14 @@ const ExamDonutChart = ({ passPercent, failPercent, passCount, failCount, highes
             <span className="d-inline-block rounded-circle bg-info" style={{ width: '8px', height: '8px' }}></span>
             Highest Score
           </span>
-          <span className="fw-bold text-primary">{highestScore}%</span>
+          <span className="fw-bold theme-text">{highestScore}%</span>
         </div>
         <div className="d-flex justify-content-between align-items-center mb-2 small border-bottom pb-1">
           <span className="d-flex align-items-center gap-2">
             <span className="d-inline-block rounded-circle bg-secondary" style={{ width: '8px', height: '8px' }}></span>
             Lowest Score
           </span>
-          <span className="fw-bold text-primary">{lowestScore}%</span>
+          <span className="fw-bold theme-text">{lowestScore}%</span>
         </div>
       </div>
     </div>
@@ -360,7 +360,7 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
     return (
       <div className="card portal-glass-card border-0">
         <div className="card-body p-5 text-center">
-          <div className="spinner-border text-success" role="status">
+          <div className="spinner-border" role="status" style={{ color: 'var(--theme-color)' }}>
             <span className="visually-hidden">Loading...</span>
           </div>
           <p className="text-muted mt-2 small">Loading exam scores...</p>
@@ -402,9 +402,9 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
     <div className="card portal-glass-card border-0 overflow-hidden">
       <style>{`
         .scores-header-card {
-            background: linear-gradient(135deg, #10b981, #059669) !important;
+            background: var(--theme-gradient) !important;
             color: #ffffff;
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1) !important;
+            box-shadow: 0 10px 25px var(--theme-glow) !important;
         }
         .btn-toggle-charts {
             background: rgba(255, 255, 255, 0.15);
@@ -415,13 +415,13 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
         }
         .btn-toggle-charts:hover {
             background: #ffffff;
-            color: #059669;
+            color: var(--theme-color);
             transform: translateY(-1px);
         }
 
         .analytics-block {
             background: rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(16, 185, 129, 0.12);
+            border: 1px solid var(--theme-glow);
             border-radius: 14px;
             padding: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01);
@@ -434,10 +434,10 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
         .modern-scores-table th {
             font-weight: 700;
             font-size: 13.5px;
-            color: #064e3b;
-            background: rgba(16, 185, 129, 0.08) !important;
+            color: var(--theme-color);
+            background: var(--theme-glow) !important;
             padding: 12px 18px;
-            border-bottom: 1.5px solid rgba(16, 185, 129, 0.15);
+            border-bottom: 1.5px solid var(--theme-glow);
         }
         .modern-scores-table td {
             padding: 12px 18px;
@@ -449,7 +449,7 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
             transition: all 0.2s ease;
         }
         .modern-scores-table tr:hover {
-            background-color: rgba(16, 185, 129, 0.02) !important;
+            background-color: var(--theme-glow) !important;
         }
         .score-badge {
             font-size: 11px;
@@ -469,10 +469,14 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
             border: 1px solid #fca5a5;
         }
 
+        .theme-text {
+            color: var(--theme-color) !important;
+        }
+
         .btn-grade-review {
-            background: rgba(79, 70, 229, 0.06);
-            border: 1px solid rgba(79, 70, 229, 0.3);
-            color: #4f46e5;
+            background: var(--theme-glow);
+            border: 1px solid var(--theme-color);
+            color: var(--theme-color);
             font-weight: 600;
             font-size: 12px;
             border-radius: 6px;
@@ -480,9 +484,9 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
             transition: all 0.2s ease;
         }
         .btn-grade-review:hover {
-            background: #4f46e5;
+            background: var(--theme-gradient);
             color: #ffffff;
-            border-color: #4f46e5;
+            border-color: var(--theme-color);
             transform: translateY(-0.5px);
         }
       `}</style>
@@ -528,7 +532,7 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
                 {/* Average Score Card */}
                 <div className="card text-center border shadow-sm p-3 bg-white rounded-3">
                   <div className="text-muted mb-1 small fw-bold text-uppercase" style={{ fontSize: '10px' }}>Average Score</div>
-                  <div className="fs-3 fw-bold text-primary">{averageScore}%</div>
+                  <div className="fs-3 fw-bold theme-text">{averageScore}%</div>
                 </div>
 
                 {/* Pass/Fail Donut Chart Card */}
@@ -554,7 +558,7 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
             <p className="text-muted mb-0">No submissions found for this exam.</p>
           </div>
         ) : (
-          <div className="table-responsive border rounded-3 overflow-hidden">
+          <div className="table-responsive border rounded-4 overflow-hidden">
             <table className="modern-scores-table table align-middle">
               <thead>
                 <tr>
@@ -570,7 +574,7 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
                   <tr key={idx}>
                     <td className="fw-semibold text-dark">{sub.studentName}</td>
                     <td>{formatDate(sub.submittedAt)}</td>
-                    <td className="fw-bold text-primary">{sub.score}%</td>
+                    <td className="fw-bold theme-text">{sub.score}%</td>
                     <td>
                       {sub.score >= passGrade ? (
                         <span className="score-badge score-pass">Passed</span>

@@ -34,7 +34,7 @@ const ReviewExamViewer = ({ examId, studentName, onBack }) => {
     return (
       <div className="card portal-glass-card border-0 ">
         <div className="card-body text-center p-5">
-          <div className="spinner-border text-success" role="status">
+          <div className="spinner-border" role="status" style={{ color: 'var(--theme-color)' }}>
             <span className="visually-hidden">Loading...</span>
           </div>
           <p className="text-muted mt-2 small">Loading exam review...</p>
@@ -71,9 +71,9 @@ const ReviewExamViewer = ({ examId, studentName, onBack }) => {
             to { opacity: 1; transform: translateY(0); }
         }
         .review-header-card {
-            background: linear-gradient(135deg, #10b981, #059669) !important;
+            background: var(--theme-gradient) !important;
             color: #ffffff;
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1) !important;
+            box-shadow: 0 10px 25px var(--theme-glow) !important;
             border-radius: 20px 20px 0 0 !important;
         }
         .review-body-card {
@@ -89,7 +89,7 @@ const ReviewExamViewer = ({ examId, studentName, onBack }) => {
             width: 52px;
             height: 52px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+            background: var(--theme-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -97,11 +97,11 @@ const ReviewExamViewer = ({ examId, studentName, onBack }) => {
             font-weight: 800;
             font-size: 24px;
             border: 2.5px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 16px rgba(79, 70, 229, 0.2);
+            box-shadow: 0 8px 16px var(--theme-glow);
             flex-shrink: 0;
         }
         .review-score-pill {
-            background: rgba(16, 185, 129, 0.1);
+             background: rgba(16, 185, 129, 0.1);
             border: 1px solid rgba(16, 185, 129, 0.25);
             color: #059669;
             padding: 6px 14px;

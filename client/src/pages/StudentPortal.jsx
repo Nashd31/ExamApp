@@ -178,6 +178,7 @@ const StudentPortal = () => {
   const passedExams = pastExams.filter(p => p.areGradesPublished !== false && p.score >= p.passGrade).length;
   const pendingExams = pastExams.filter(p => p.areGradesPublished === false).length;
   const firstLetter = user?.name ? user.name.charAt(0).toUpperCase() : 'S';
+  const avatarContent = user?.avatar && user.avatar !== 'initials' ? user.avatar : firstLetter;
 
   const filteredCourses = enrolledCourses.filter(c =>
     c.name.toLowerCase().includes(courseSearchQuery.toLowerCase()) ||
@@ -256,10 +257,10 @@ const StudentPortal = () => {
             transition: all 0.25s ease;
         }
         .sidebar-search-input:focus {
-            border-color: #4f46e5;
+            border-color: var(--theme-color);
             background: #ffffff;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+            box-shadow: 0 0 0 3px var(--theme-glow);
         }
         .sidebar-course-item {
             padding: 12px 16px;
@@ -276,13 +277,13 @@ const StudentPortal = () => {
         .sidebar-course-item:hover {
             background: rgba(255, 255, 255, 0.85);
             transform: translateY(-1px);
-            border-color: rgba(79, 70, 229, 0.2);
+            border-color: var(--theme-glow);
         }
         .sidebar-course-item.active {
-            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+            background: var(--theme-gradient);
             color: #ffffff !important;
-            border-color: #3b82f6;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+            border-color: var(--theme-color);
+            box-shadow: 0 4px 12px var(--theme-glow);
         }
         .sidebar-course-item.active .course-title {
             color: #ffffff !important;
@@ -310,9 +311,9 @@ const StudentPortal = () => {
             text-transform: uppercase;
         }
         .sidebar-add-course-btn {
-            background: rgba(79, 70, 229, 0.05);
-            border: 1px dashed rgba(79, 70, 229, 0.3);
-            color: #4f46e5;
+            background: var(--theme-glow);
+            border: 1px dashed var(--theme-color);
+            color: var(--theme-color);
             font-weight: 600;
             font-size: 13px;
             border-radius: 10px;
@@ -322,12 +323,12 @@ const StudentPortal = () => {
             border-style: dashed;
         }
         .sidebar-add-course-btn:hover {
-            background: rgba(79, 70, 229, 0.12);
-            border-color: #4f46e5;
+            background: var(--theme-glow);
+            border-color: var(--theme-color);
             border-style: solid;
         }
         .sidebar-add-exam-btn {
-            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+            background: var(--theme-gradient);
             color: #ffffff;
             font-weight: 600;
             font-size: 13.5px;
@@ -336,18 +337,18 @@ const StudentPortal = () => {
             padding: 10px 16px;
             width: 100%;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+            box-shadow: 0 4px 12px var(--theme-glow);
         }
         .sidebar-add-exam-btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.22);
+            box-shadow: 0 6px 16px var(--theme-glow);
         }
 
         .welcome-avatar {
             width: 52px;
             height: 52px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+            background: var(--theme-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -357,8 +358,9 @@ const StudentPortal = () => {
             font-weight: 800;
             font-size: 25px;
             border: 2.5px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 16px rgba(79, 70, 229, 0.2);
+            box-shadow: 0 8px 16px var(--theme-glow);
             flex-shrink: 0;
+            overflow: hidden;
         }
 
         .stat-box {
@@ -406,9 +408,9 @@ const StudentPortal = () => {
             transition: all 0.3s ease;
         }
         .search-icon-wrapper .form-control:focus {
-            border-color: #4f46e5;
+            border-color: var(--theme-color);
             background: #ffffff;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+            box-shadow: 0 0 0 3px var(--theme-glow);
         }
 
         .btn-search {
@@ -417,20 +419,20 @@ const StudentPortal = () => {
             border-radius: 12px;
             font-weight: 600;
             font-size: 14px;
-            background: linear-gradient(135deg, #4f46e5, #3b82f6);
+            background: var(--theme-gradient);
             border: none;
             color: white;
             transition: all 0.3s ease;
         }
         .btn-search:hover {
             transform: translateY(-1px);
-            box-shadow: 0 5px 12px rgba(79, 70, 229, 0.2);
+            box-shadow: 0 5px 12px var(--theme-glow);
             color: white;
         }
 
         .found-exam-box {
             background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(99, 102, 241, 0.15);
+            border: 1px solid var(--theme-glow);
             border-radius: 14px;
             padding: 16px 20px;
             box-shadow: 0 8px 24px rgba(30, 41, 59, 0.03);
@@ -470,8 +472,8 @@ const StudentPortal = () => {
         .modern-student-table th {
             font-weight: 700;
             font-size: 15px;
-            color: #21477dff;
-            background: rgba(185, 220, 255, 0.6) !important;
+            color: var(--theme-color) !important;
+            background: var(--theme-glow) !important;
             padding: 12px 18px;
             border-bottom: 1.5px solid #cbd5e1;
         }
@@ -485,7 +487,7 @@ const StudentPortal = () => {
             transition: all 0.2s ease;
         }
         .modern-student-table tr:hover {
-            background-color: rgba(79, 70, 229, 0.02) !important;
+            background-color: var(--theme-glow) !important;
         }
 
         /* Badge Pill elements */
@@ -512,9 +514,9 @@ const StudentPortal = () => {
         }
 
         .btn-review-outline {
-            border: 1px solid rgba(79, 70, 229, 0.3) !important;
-            background: rgba(79, 70, 229, 0.05) !important;
-            color: #4f46e5 !important;
+            border: 1px solid var(--theme-color) !important;
+            background: var(--theme-glow) !important;
+            color: var(--theme-color) !important;
             font-size: 13px;
             font-weight: 600;
             padding: 4px 10px !important;
@@ -522,10 +524,10 @@ const StudentPortal = () => {
             transition: all 0.2s ease;
         }
         .btn-review-outline:hover {
-            background: #4f46e5 !important;
+            background: var(--theme-color) !important;
             color: #ffffff !important;
-            border-color: #4f46e5 !important;
-            box-shadow: 0 3px 8px rgba(79, 70, 229, 0.15);
+            border-color: var(--theme-color) !important;
+            box-shadow: 0 3px 8px var(--theme-glow);
         }
 
         .alert-modern-error {
@@ -546,7 +548,7 @@ const StudentPortal = () => {
       <div className="card welcome-header-card p-4 mb-4 border-0">
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
           <div className="col-md-7 d-flex align-items-center gap-3 text-start p-3">
-            <div className="welcome-avatar">{firstLetter}</div>
+            <div className="welcome-avatar">{avatarContent}</div>
             <div>
               <h2 className="fw-bold mb-1">Welcome Back, {user?.name || 'Student'}!</h2>
               <p className="mb-0" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>Student Portal | Ready to take your scheduled tests</p>
@@ -753,7 +755,7 @@ const StudentPortal = () => {
                 <div className="card portal-glass-card border-0 p-4 p-md-5 text-start">
                   <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 pb-3 border-bottom text-start">
                     <div>
-                      <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-bold mb-2" style={{ fontSize: '11px' }}>
+                      <span className="badge rounded-pill px-3 py-1 fw-bold mb-2" style={{ fontSize: '11px', background: 'var(--theme-glow)', color: 'var(--theme-color)', border: '1px solid var(--theme-color)' }}>
                         {course.code}
                       </span>
                       <h3 className="fw-bold mb-1 text-dark">{course.name}</h3>
@@ -794,7 +796,7 @@ const StudentPortal = () => {
                     <h5 className="fw-bold mb-3 text-dark">My Course Submissions</h5>
                     {loadingPast ? (
                       <div className="text-center my-4">
-                        <div className="spinner-border text-primary" role="status">
+                        <div className="spinner-border" role="status" style={{ color: 'var(--theme-color)' }}>
                           <span className="visually-hidden">Loading...</span>
                         </div>
                       </div>

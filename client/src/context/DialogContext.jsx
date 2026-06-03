@@ -67,7 +67,7 @@ const VARIANTS = {
 // ---------------------------------------------------------------------------
 // Provider — the only export from this file (satisfies react-refresh rule)
 // ---------------------------------------------------------------------------
-export function DialogProvider({ children }) {
+export const DialogProvider = ({ children }) => {
   const [dialog, setDialog] = useState(null);
   const resolveRef = useRef(null);
 
@@ -118,7 +118,7 @@ export function DialogProvider({ children }) {
 // ---------------------------------------------------------------------------
 // Modal UI — internal, intentionally not exported
 // ---------------------------------------------------------------------------
-function DialogModal({ dialog, onClose }) {
+const DialogModal = ({ dialog, onClose }) => {
   const { type, variant, message, detail } = dialog;
   const v = VARIANTS[variant] || VARIANTS.info;
   const isConfirm = type === 'confirm';

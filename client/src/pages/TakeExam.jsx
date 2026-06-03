@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getExamById, submitExam } from '../api/examService';
@@ -23,10 +23,10 @@ const TakeExam = () => {
     const [submitted, setSubmitted] = useState(false);
 
 
-    const cleanExamSession = () => {
+    const cleanExamSession = useCallback(() => {
         localStorage.removeItem(`examAnswers_${id}`);
         localStorage.removeItem(`examEndTime_${id}`);
-    };
+    }, [id]);
 
     // Fetches the exam data and initializes the countdown timer.
     useEffect(() => {
@@ -126,7 +126,7 @@ const TakeExam = () => {
             };
             autoSubmit();
         }
-    }, [timeLeft, exam, submitted, answers, navigate, user]);
+    }, [timeLeft, exam, submitted, answers, navigate, user, cleanExamSession]);
 
     /**
      * Implements basic browser lockdown features:
