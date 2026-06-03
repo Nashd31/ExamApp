@@ -3,6 +3,7 @@ import { createExam, updateExam, getCoursesByTeacher } from '../api/examService'
 import { showSuccess } from '../services/notify';
 import { getExamStatus, toDatetimeLocal } from '../utils/examUtils';
 import { useAuth } from '../hooks/useAuth';
+import CustomDateTimePicker from './CustomDateTimePicker';
 
 /**
  * ExamEditor Component
@@ -243,12 +244,14 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
   const totalPoints = editingExam.questions.reduce((sum, q) => sum + (Number(q.points) || 0), 0);
 
   return (
-    <div className="card portal-glass-card border-0 overflow-hidden">
+    <div className="card portal-glass-card border-0">
       <style>{`
         .editor-header-card {
             background: linear-gradient(135deg, #10b981, #059669) !important;
             color: #ffffff;
             box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1) !important;
+            border-top-left-radius: 20px !important;
+            border-top-right-radius: 20px !important;
         }
 
         .custom-dropdown-container {
@@ -327,13 +330,13 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             background: rgba(255, 255, 255, 0.7);
             font-size: 14px;
             transition: all 0.3s ease;
+            accent-color: #10b981;
         }
         .modern-form-control:focus {
             border-color: #10b981;
             background: #ffffff;
             box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
         }
-
         .points-progress-card {
             background: rgba(255, 255, 255, 0.85);
             border: 1px solid rgba(148, 163, 184, 0.15);
@@ -622,26 +625,23 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
               />
             </div>
             <div className="col-md-3 col-sm-6">
-              <label className="form-label small fw-semibold text-secondary mb-1.5">Start Date & Time</label>
-              <input
-                type="datetime-local"
-                className="form-control modern-form-control"
-                value={toDatetimeLocal(editingExam.startDate)}
-                onChange={(e) => setEditingExam({
+              <CustomDateTimePicker
+                label="Start Date & Time"
+                value={editingExam.startDate}
+                onChange={(val) => setEditingExam({
                   ...editingExam,
-                  startDate: e.target.value ? new Date(e.target.value).toISOString() : ''
+                  startDate: val
                 })}
               />
             </div>
             <div className="col-md-3 col-sm-6">
-              <label className="form-label small fw-semibold text-secondary mb-1.5">End Date & Time</label>
-              <input
-                type="datetime-local"
-                className="form-control modern-form-control"
-                value={toDatetimeLocal(editingExam.endDate)}
-                onChange={(e) => setEditingExam({
+              <CustomDateTimePicker
+                label="End Date & Time"
+                value={editingExam.endDate}
+                alignRight={true}
+                onChange={(val) => setEditingExam({
                   ...editingExam,
-                  endDate: e.target.value ? new Date(e.target.value).toISOString() : ''
+                  endDate: val
                 })}
               />
             </div>

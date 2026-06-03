@@ -537,7 +537,18 @@ const TeacherDashboard = () => {
             transform: translateY(-1px);
             box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
         }
-
+        .btn-cancel-exam {
+            background: rgba(148, 163, 184, 0.06);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            color: #475569;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-cancel-exam:hover {
+            background: rgba(148, 163, 184, 0.12);
+            color: #1e293b;
+            transform: translateY(-1px);
+        }
         .course-sidebar {
             background: rgba(255, 255, 255, 0.65);
             backdrop-filter: blur(12px);

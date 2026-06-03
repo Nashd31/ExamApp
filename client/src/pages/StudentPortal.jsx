@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getExamById, getStudentSubmissions, getAllExams, getStudentEnrolledCourses, enrollStudentInCourse, unenrollStudentFromCourse } from '../api/examService';
+import { getExamById, getStudentSubmissions, getAllExams, getStudentEnrolledCourses, unenrollStudentFromCourse } from '../api/examService';
 import { useAuth } from '../hooks/useAuth';
 import { showSuccess } from '../services/notify';
 import { useDialog } from '../hooks/useDialog';
@@ -27,12 +27,9 @@ const StudentPortal = () => {
   const [reviewingExamId, setReviewingExamId] = useState(null);
 
   // Course states
-  const [joinCourseCode, setJoinCourseCode] = useState('');
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [allExams, setAllExams] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState(null);
-  const [joining, setJoining] = useState(false);
-  const [isJoiningCourse, setIsJoiningCourse] = useState(false);
   const [isSearchingExam, setIsSearchingExam] = useState(false);
   const [courseSearchQuery, setCourseSearchQuery] = useState('');
 
@@ -42,7 +39,7 @@ const StudentPortal = () => {
     if (container) {
       container.scrollTop = 0;
     }
-  }, [reviewingExamId, selectedCourseId, isJoiningCourse, isSearchingExam]);
+  }, [reviewingExamId, selectedCourseId, isSearchingExam]);
 
   /**
    * Fetches the details of an exam based on the provided exam ID.
@@ -142,25 +139,7 @@ const StudentPortal = () => {
     return () => { active = false; };
   }, [user?.id, user?.name]);
 
-  // Handles joining a course using a code
-  const handleJoinCourse = async (e) => {
-    e.preventDefault();
-    if (!joinCourseCode.trim()) return;
-    setJoining(true);
-    setError('');
-    try {
-      const joinedCourse = await enrollStudentInCourse(user.id, joinCourseCode.trim());
-      showSuccess(`Enrolled in "${joinedCourse.name}" successfully!`);
-      setJoinCourseCode('');
-      setIsJoiningCourse(false);
-      setSelectedCourseId(joinedCourse.id);
-      await loadPortalData(false);
-    } catch (err) {
-      setError(err?.message || 'Failed to join course');
-    } finally {
-      setJoining(false);
-    }
-  };
+
 
   // Handles leaving/unenrolling from a course
   const handleLeaveCourse = async (courseId, courseName) => {
@@ -603,22 +582,9 @@ const StudentPortal = () => {
             {/* Action Buttons at the Top */}
             <div className="d-flex flex-column gap-2">
               <button 
-                className="sidebar-add-course-btn"
-                onClick={() => {
-                  setIsJoiningCourse(true);
-                  setIsSearchingExam(false);
-                  setSelectedCourseId(null);
-                  setReviewingExamId(null);
-                  setError('');
-                }}
-              >
-                + Join Course
-              </button>
-              <button 
                 className="sidebar-add-exam-btn"
                 onClick={() => {
                   setIsSearchingExam(true);
-                  setIsJoiningCourse(false);
                   setSelectedCourseId(null);
                   setReviewingExamId(null);
                   setError('');
@@ -655,10 +621,9 @@ const StudentPortal = () => {
                 {filteredCourses.map(c => (
                   <li 
                     key={c.id} 
-                    className={`sidebar-course-item ${selectedCourseId === c.id && !isJoiningCourse && !isSearchingExam && !reviewingExamId ? 'active' : ''}`}
+                    className={`sidebar-course-item ${selectedCourseId === c.id && !isSearchingExam && !reviewingExamId ? 'active' : ''}`}
                     onClick={() => {
                       setSelectedCourseId(c.id);
-                      setIsJoiningCourse(false);
                       setIsSearchingExam(false);
                       setReviewingExamId(null);
                       setError('');
@@ -681,58 +646,6 @@ const StudentPortal = () => {
               studentName={user?.name}
               onBack={() => setReviewingExamId(null)}
             />
-          ) : isJoiningCourse ? (
-            // Join Course Card
-            <div className="card portal-glass-card border-0 p-4 p-md-5 text-start">
-              <h5 className="fw-bold text-dark mb-1">Join a Course</h5>
-              <p className="text-muted small mb-4">Enter the Course Enrollment Code to access its study materials and exams.</p>
-              <form onSubmit={handleJoinCourse}>
-                <div className="mb-3">
-                  <label className="form-label small fw-semibold text-secondary mb-1">Course Code</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="e.g. JS-301, REACT-102"
-                    value={joinCourseCode}
-                    onChange={(e) => setJoinCourseCode(e.target.value)}
-                    style={{ height: '44px', borderRadius: '10px', fontSize: '14.5px' }}
-                  />
-                </div>
-                <div className="d-flex gap-2">
-                  <button
-                    type="submit"
-                    className="btn btn-search py-2 px-4 btn-sm"
-                    style={{ height: '42px', fontWeight: '600', color: 'white' }}
-                    disabled={joining}
-                  >
-                    {joining ? 'Enrolling...' : 'Join Course'}
-                  </button>
-                  <button 
-                    type="button" 
-                    className="btn btn-outline-secondary py-2 px-4 rounded-3 btn-sm"
-                    onClick={() => {
-                      setIsJoiningCourse(false);
-                      setError('');
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-                {error && (
-                  <div className="alert-modern-error mt-3">
-                    <div className="d-flex align-items-center gap-2 flex-grow-1">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                      </svg>
-                      <span>{error}</span>
-                    </div>
-                    <button type="button" className="btn-close ms-auto" style={{ fontSize: '10px' }} onClick={() => setError('')} aria-label="Close"></button>
-                  </div>
-                )}
-              </form>
-            </div>
           ) : isSearchingExam ? (
             // Take Exam by ID Card
             <div className="card portal-glass-card border-0 p-4 p-md-5 text-start">
@@ -803,9 +716,18 @@ const StudentPortal = () => {
                   </div>
                   <button
                     className="btn btn-start-exam btn-sm py-1.5 px-3 flex-shrink-0"
-                    onClick={() => navigate(`/take-exam/${exam.id}`)}
+                    onClick={async () => {
+                      const confirmed = await showConfirm(
+                        'Ready to start?',
+                        `You are about to begin the exam "${exam.title}". The timer will start immediately.`,
+                        'greenConfirm'
+                      );
+                      if (confirmed) {
+                        navigate(`/take-exam/${exam.id}`);
+                      }
+                    }}
                   >
-                    Begin
+                    Begin Now 
                   </button>
                 </div>
               )}
@@ -818,7 +740,7 @@ const StudentPortal = () => {
                 return (
                   <div className="card portal-glass-card border-0 p-5 text-center">
                     <h5 className="fw-bold mb-2 text-dark">No Course Selected</h5>
-                    <p className="text-muted small mb-0">Select an enrolled course from the sidebar, or click "+ Join Course" to enroll in a new class.</p>
+                    <p className="text-muted small mb-0">Select an enrolled course from the sidebar, or click "Take Exam by ID" to start a new exam.</p>
                   </div>
                 );
               }
