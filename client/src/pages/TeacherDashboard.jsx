@@ -286,6 +286,7 @@ const TeacherDashboard = () => {
   }).length;
   const totalSubmissions = Object.values(submissionCounts).reduce((sum, count) => sum + count, 0);
   const firstLetter = user?.name ? user.name.charAt(0).toUpperCase() : 'T';
+  const avatarContent = user?.avatar && user.avatar !== 'initials' ? user.avatar : firstLetter;
   const filteredCourses = courses.filter(c =>
     c.name.toLowerCase().includes(courseSearchQuery.toLowerCase()) ||
     c.code.toLowerCase().includes(courseSearchQuery.toLowerCase())
@@ -314,8 +315,7 @@ const TeacherDashboard = () => {
         }
 
         .welcome-header-card {
-            background: linear-gradient(135deg, #0f172a, #022c22) !important;
-            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            background: linear-gradient(135deg, #0f172a, var(--theme-color)) !important;
             border-radius: 20px !important;
             color: #ffffff;
             box-shadow: 0 15px 30px rgba(15, 23, 42, 0.12) !important;
@@ -325,7 +325,7 @@ const TeacherDashboard = () => {
             width: 52px;
             height: 52px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: var(--theme-gradient);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -335,8 +335,9 @@ const TeacherDashboard = () => {
             font-weight: 800;
             font-size: 25px;
             border: 2.5px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
+            box-shadow: 0 8px 16px var(--theme-glow);
             flex-shrink: 0;
+            overflow: hidden;
         }
 
         .stat-box {
@@ -356,7 +357,7 @@ const TeacherDashboard = () => {
         }
         .stat-box-lbl {
             font-size: 10px;
-            color: #a7f3d0;
+            color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-top: 2px;
@@ -379,7 +380,7 @@ const TeacherDashboard = () => {
             transform: translateY(-2px);
             background: #ffffff;
             box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
-            border-color: rgba(16, 185, 129, 0.3);
+            border-color: var(--theme-color);
         }
 
         .status-pill {
@@ -419,18 +420,18 @@ const TeacherDashboard = () => {
         }
 
         .btn-action-green {
-            background: rgba(16, 185, 129, 0.06);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            color: #059669;
+            background: var(--theme-glow);
+            border: 1px solid var(--theme-color);
+            color: var(--theme-color);
             font-weight: 600;
             transition: all 0.2s ease;
         }
         .btn-action-green:hover:not(:disabled) {
-            background: #10b981;
+            background: var(--theme-color);
             color: #ffffff;
-            border-color: #10b981;
+            border-color: var(--theme-color);
             transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15);
+            box-shadow: 0 4px 10px var(--theme-glow);
         }
 
         .btn-action-amber {
@@ -449,33 +450,33 @@ const TeacherDashboard = () => {
         }
 
         .btn-action-indigo {
-            background: rgba(79, 70, 229, 0.06);
-            border: 1px solid rgba(79, 70, 229, 0.3);
-            color: #4f46e5;
+            background: var(--theme-glow);
+            border: 1px solid var(--theme-color);
+            color: var(--theme-color);
             font-weight: 600;
             transition: all 0.2s ease;
         }
         .btn-action-indigo:hover:not(:disabled) {
-            background: #4f46e5;
+            background: var(--theme-gradient);
             color: #ffffff;
-            border-color: #4f46e5;
+            border-color: var(--theme-color);
             transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15);
+            box-shadow: 0 4px 10px var(--theme-glow);
         }
 
         .btn-action-blue {
-            background: rgba(59, 130, 246, 0.06);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            color: #2563eb;
+            background: var(--theme-glow);
+            border: 1px solid var(--theme-color);
+            color: var(--theme-color);
             font-weight: 600;
             transition: all 0.2s ease;
         }
         .btn-action-blue:hover:not(:disabled) {
-            background: #3b82f6;
+            background: var(--theme-gradient);
             color: #ffffff;
-            border-color: #3b82f6;
+            border-color: var(--theme-color);
             transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.15);
+            box-shadow: 0 4px 10px var(--theme-glow);
         }
 
         .btn-action-rose {
@@ -526,16 +527,17 @@ const TeacherDashboard = () => {
         }
 
         .btn-save-exam {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: var(--theme-gradient);
             border: none;
             color: white;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.18);
+            box-shadow: 0 4px 12px var(--theme-glow);
             transition: all 0.2s ease;
         }
         .btn-save-exam:hover:not(:disabled) {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+            box-shadow: 0 6px 16px var(--theme-glow);
+            color: white;
         }
         .btn-cancel-exam {
             background: rgba(148, 163, 184, 0.06);
@@ -592,10 +594,10 @@ const TeacherDashboard = () => {
             transition: all 0.25s ease;
         }
         .sidebar-search-input:focus {
-            border-color: #10b981;
+            border-color: var(--theme-color);
             background: #ffffff;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+            box-shadow: 0 0 0 3px var(--theme-glow);
         }
         .sidebar-course-item {
             padding: 12px 16px;
@@ -612,13 +614,13 @@ const TeacherDashboard = () => {
         .sidebar-course-item:hover {
             background: rgba(255, 255, 255, 0.85);
             transform: translateY(-1px);
-            border-color: rgba(16, 185, 129, 0.2);
+            border-color: var(--theme-glow);
         }
         .sidebar-course-item.active {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: var(--theme-gradient);
             color: #ffffff !important;
-            border-color: #059669;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            border-color: var(--theme-color);
+            box-shadow: 0 4px 12px var(--theme-glow);
         }
         .sidebar-course-item.active .course-title {
             color: #ffffff !important;
@@ -646,9 +648,9 @@ const TeacherDashboard = () => {
             text-transform: uppercase;
         }
         .sidebar-add-course-btn {
-            background: rgba(16, 185, 129, 0.05);
-            border: 1px dashed rgba(16, 185, 129, 0.3);
-            color: #059669;
+            background: var(--theme-glow);
+            border: 1px dashed var(--theme-color);
+            color: var(--theme-color);
             font-weight: 600;
             font-size: 13px;
             border-radius: 10px;
@@ -658,12 +660,12 @@ const TeacherDashboard = () => {
             border-style: dashed;
         }
         .sidebar-add-course-btn:hover {
-            background: rgba(16, 185, 129, 0.12);
-            border-color: #10b981;
+            background: var(--theme-glow);
+            border-color: var(--theme-color);
             border-style: solid;
         }
         .sidebar-add-exam-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: var(--theme-gradient);
             color: #ffffff;
             font-weight: 600;
             font-size: 13.5px;
@@ -672,11 +674,24 @@ const TeacherDashboard = () => {
             padding: 10px 16px;
             width: 100%;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+            box-shadow: 0 4px 12px var(--theme-glow);
         }
         .sidebar-add-exam-btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.22);
+            box-shadow: 0 6px 16px var(--theme-glow);
+        }
+        .modern-form-control {
+            border-radius: 9px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            background: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            accent-color: var(--theme-color);
+        }
+        .modern-form-control:focus {
+            border-color: var(--theme-color);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px var(--theme-glow);
         }
       `}</style>
 
@@ -684,10 +699,10 @@ const TeacherDashboard = () => {
       <div className="card welcome-header-card p-4 mb-4 border-0">
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
           <div className="col-md-7 d-flex align-items-center gap-3 text-start p-3">
-            <div className="welcome-avatar">{firstLetter}</div>
+            <div className="welcome-avatar">{avatarContent}</div>
             <div>
               <h4 className="mb-1 fw-bold">Welcome back, {user?.name || 'Teacher'}!</h4>
-              <p className="mb-0" style={{ color: '#a7f3d0' }}>Teacher Dashboard | Manage exams and grade student submissions</p>
+              <p className="mb-0" style={{ color: 'rgba(255, 255, 255, 0.75)' }}>Teacher Dashboard | Manage exams and grade student submissions</p>
             </div>
           </div>
           <div className="d-flex gap-2">
@@ -793,6 +808,7 @@ const TeacherDashboard = () => {
             />
           ) : isEditing ? (
             <ExamEditor
+              key={selectedExam ? selectedExam.id : 'new-exam'}
               exam={selectedExam}
               exams={exams}
               onSaveSuccess={onSaveSuccess}

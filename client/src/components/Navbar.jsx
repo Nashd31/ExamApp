@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import SettingsModal from './SettingsModal';
 
 /**
  * Modernized Navigation Bar component.
@@ -9,6 +11,7 @@ import { useAuth } from '../hooks/useAuth';
 const Navbar = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     // Hide navbar completely while taking an exam
     if (location.pathname.startsWith('/take-exam')) {
@@ -16,9 +19,8 @@ const Navbar = () => {
     }
 
     const firstLetter = user?.name ? user.name.charAt(0).toUpperCase() : '';
-    const avatarGradient = user?.role === 'teacher' 
-        ? 'linear-gradient(135deg, #10b981, #059669)' 
-        : 'linear-gradient(135deg, #4f46e5, #3b82f6)';
+    const avatarGradient = 'var(--theme-gradient)';
+    const avatarContent = user?.avatar && user.avatar !== 'initials' ? user.avatar : firstLetter;
 
     return (
         <nav className="navbar navbar-expand-lg navbar-dark modern-navbar px-4 py-3">
@@ -253,9 +255,9 @@ const Navbar = () => {
 
                         {user && (
                             <li className="nav-item ms-lg-2">
-                                <div className="user-avatar-badge">
+                                <div className="user-avatar-badge" style={{ cursor: 'pointer' }} onClick={() => setIsSettingsOpen(true)}>
                                     <div className="user-avatar" style={{ background: avatarGradient }}>
-                                        {firstLetter}
+                                        {avatarContent}
                                     </div>
                                     <div className="user-info">
                                         <span className="user-name">{user.name}</span>
@@ -284,6 +286,7 @@ const Navbar = () => {
                     </ul>
                 </div>
             </div>
+            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
         </nav>
     );
 };
