@@ -186,7 +186,7 @@ const StudentPortal = () => {
   );
 
   return (
-    <div className="container mt-2 mb-5 student-portal-container">
+    <div className="container-fluid mt-2 mb-5 student-portal-container">
       <style>{`
         .student-portal-container {
             animation: fadeInPortal 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);

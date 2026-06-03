@@ -294,7 +294,7 @@ const TeacherDashboard = () => {
 
   // Render view: Default main dashboard listing all exams
   return (
-    <div className="container mt-2 mb-5 teacher-dashboard-container">
+    <div className="container-fluid mt-2 mb-5 teacher-dashboard-container">
       <style>{`
         .teacher-dashboard-container {
             animation: fadeInPortal 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);

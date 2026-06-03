@@ -254,7 +254,7 @@ const TakeExam = () => {
     }
 
     return (
-        <div className="container mt-4 mb-5">
+        <div className="container-fluid mt-4 mb-5">
             <div className="card shadow rounded-4">
                 <div className="card-header d-flex justify-content-between align-items-center bg-warning text-dark p-4 rounded-top-4 sticky-top">
                     <div className="mb-1">
