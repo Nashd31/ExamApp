@@ -2,12 +2,25 @@ import mockDb, { saveToStorage } from './mockDb';
 import config from '../services/config';
 
 const DELAY = config.MOCK_API_DELAY;
+const BASE_URL = config.API_BASE_URL;
+
+// Helper to standardise responses and propagate backend errors properly to caller
+const handleResponse = async (res) => {
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Request failed with status ${res.status}`);
+  }
+  if (res.status === 204) return;
+  return res.json();
+};
 
 /**
- * Retrieves all exams from the mock database.
- * Simulates a network request delay before resolving the promise.
+ * Retrieves all exams.
  */
 export const getAllExams = () => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/exams`).then(handleResponse);
+  }
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([...mockDb.exams]);
@@ -17,9 +30,11 @@ export const getAllExams = () => {
 
 /**
  * Retrieves a specific exam by its ID.
- * Resolves with a copy of the exam object if found, otherwise rejects with an error.
  */
 export const getExamById = (id) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/exams/${id}`).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const exam = mockDb.exams.find(e => e.id === id);
@@ -33,11 +48,16 @@ export const getExamById = (id) => {
 };
 
 /**
- * Creates a new exam and adds it to the mock database.
- * Generates a unique ID based on the current timestamp, removes the 'isNew' flag,
- * and persists the updated database to local storage.
+ * Creates a new exam.
  */
 export const createExam = (exam) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/exams`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(exam)
+    }).then(handleResponse);
+  }
   return new Promise((resolve) => {
     setTimeout(() => {
       const examData = { ...exam };
@@ -51,11 +71,16 @@ export const createExam = (exam) => {
 };
 
 /**
- * Updates an existing exam in the mock database.
- * Locates the exam by its ID, updates its data in place, and persists the changes.
- * Rejects if the exam cannot be found.
+ * Updates an existing exam.
  */
 export const updateExam = (updatedExam) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/exams/${updatedExam.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedExam)
+    }).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const index = mockDb.exams.findIndex(e => e.id === updatedExam.id);
@@ -71,10 +96,14 @@ export const updateExam = (updatedExam) => {
 };
 
 /**
- * Deletes an exam from the mock database by its ID.
- * Removes the exam from the array and persists the changes to storage.
+ * Deletes an exam by its ID.
  */
 export const deleteExam = (id) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/exams/${id}`, {
+      method: 'DELETE'
+    }).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const index = mockDb.exams.findIndex(e => e.id === id);
@@ -90,13 +119,16 @@ export const deleteExam = (id) => {
 };
 
 /**
- * Submits a student's answers for grading and records the submission.
- * Validates the existence of the exam and its questions. Calculates the score
- * by comparing student answers against expected answers for 'multiple_choice' questions.
- * Open-ended questions are currently excluded from automatic grading.
- * Generates a submission record and saves it to local storage.
+ * Submits student answers for grading.
  */
 export const submitExam = (examId, studentName, studentAnswers, studentId = null) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/submissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ examId, studentName, answers: studentAnswers, studentId })
+    }).then(handleResponse).then(data => data.score);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const exam = mockDb.exams.find((e) => e.id === examId);
@@ -124,7 +156,6 @@ export const submitExam = (examId, studentName, studentAnswers, studentId = null
 
       let totalScore = 0;
 
-      // Calculate grade using point values
       questions.forEach((question, index) => {
         if (!question.type || question.type === 'multiple_choice') {
           const key = question.id || index;
@@ -159,11 +190,12 @@ export const submitExam = (examId, studentName, studentAnswers, studentId = null
 };
 
 /**
- * Retrieves all submissions made by a specific student.
- * Maps over raw submissions to fetch the corresponding exam title and pass grade,
- * yielding an array of structured result objects.
+ * Retrieves student submissions.
  */
 export const getStudentSubmissions = (studentName) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/submissions/student/${encodeURIComponent(studentName)}`).then(handleResponse);
+  }
   return new Promise((resolve) => {
     setTimeout(() => {
       const scores = (mockDb.submissions || []).filter(s => s.studentName === studentName);
@@ -184,10 +216,12 @@ export const getStudentSubmissions = (studentName) => {
 };
 
 /**
- * Retrieves all submissions associated with a specific exam.
- * Used primarily by teachers to review class performance on a particular exam.
+ * Retrieves submissions associated with a specific exam.
  */
 export const getExamSubmissions = (examId) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/submissions/exam/${examId}`).then(handleResponse);
+  }
   return new Promise((resolve) => {
     setTimeout(() => {
       const submissions = (mockDb.submissions || []).filter(s => s.examId === examId);
@@ -197,10 +231,12 @@ export const getExamSubmissions = (examId) => {
 };
 
 /**
- * Retrieves a specific submission record for a given exam and student name.
- * Useful for reviewing individual answers submitted by a student.
+ * Retrieves student submission for a given exam.
  */
 export const getStudentSubmission = (examId, studentName) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/submissions/exam/${examId}/student/${encodeURIComponent(studentName)}`).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const submission = (mockDb.submissions || []).find(s => s.examId === examId && s.studentName === studentName);
@@ -213,7 +249,13 @@ export const getStudentSubmission = (examId, studentName) => {
   });
 };
 
+/**
+ * Retrieves submission by ID.
+ */
 export const getSubmissionById = (submissionId) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/submissions/${submissionId}`).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const submission = (mockDb.submissions || []).find(s => s.id === submissionId);
@@ -226,7 +268,17 @@ export const getSubmissionById = (submissionId) => {
   });
 };
 
+/**
+ * Updates submission grade.
+ */
 export const updateSubmissionGrade = (submissionId, questionId, points, notes) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/submissions/${submissionId}/grade`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId, points, notes })
+    }).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const submission = mockDb.submissions.find(s => s.id === submissionId);
@@ -269,9 +321,12 @@ export const updateSubmissionGrade = (submissionId, questionId, points, notes) =
 };
 
 /**
- * Retrieves all courses in the mock database.
+ * Retrieves all courses.
  */
 export const getAllCourses = () => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/courses`).then(handleResponse);
+  }
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([...(mockDb.courses || [])]);
@@ -280,9 +335,12 @@ export const getAllCourses = () => {
 };
 
 /**
- * Retrieves courses taught by a specific teacher.
+ * Retrieves courses taught by teacher.
  */
 export const getCoursesByTeacher = (teacherId) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/courses/teacher/${teacherId}`).then(handleResponse);
+  }
   return new Promise((resolve) => {
     setTimeout(() => {
       const courses = (mockDb.courses || []).filter(c => c.teacherId === teacherId);
@@ -292,9 +350,16 @@ export const getCoursesByTeacher = (teacherId) => {
 };
 
 /**
- * Creates a new course in the mock database.
+ * Creates a new course.
  */
 export const createCourse = (courseName, courseCode, teacherId) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/courses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: courseName, code: courseCode, teacherId })
+    }).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const codeExists = (mockDb.courses || []).some(c => c.code.toLowerCase() === courseCode.toLowerCase());
@@ -318,9 +383,16 @@ export const createCourse = (courseName, courseCode, teacherId) => {
 };
 
 /**
- * Enrolls a student in a course by its course code.
+ * Enrolls student in course.
  */
 export const enrollStudentInCourse = (studentId, courseCode) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/courses/enroll`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId, courseCode })
+    }).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const course = (mockDb.courses || []).find(c => c.code.toLowerCase() === courseCode.toLowerCase());
@@ -348,9 +420,12 @@ export const enrollStudentInCourse = (studentId, courseCode) => {
 };
 
 /**
- * Retrieves courses a specific student is enrolled in.
+ * Retrieves courses student is enrolled in.
  */
 export const getStudentEnrolledCourses = (studentId) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/courses/student/${studentId}`).then(handleResponse);
+  }
   return new Promise((resolve) => {
     setTimeout(() => {
       const student = mockDb.users.find(u => u.id === studentId);
@@ -365,9 +440,14 @@ export const getStudentEnrolledCourses = (studentId) => {
 };
 
 /**
- * Unenrolls/removes a student from a course by its course ID.
+ * Unenrolls/removes student from course.
  */
 export const unenrollStudentFromCourse = (studentId, courseId) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/courses/${courseId}/student/${studentId}`, {
+      method: 'DELETE'
+    }).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const userIndex = mockDb.users.findIndex(u => u.id === studentId);
@@ -391,11 +471,14 @@ export const unenrollStudentFromCourse = (studentId, courseId) => {
 };
 
 /**
- * Deletes a course from the mock database by its ID.
- * Also removes all exams associated with this course,
- * and clears student enrollments for this course.
+ * Deletes course.
  */
 export const deleteCourse = (courseId) => {
+  if (config.USE_SERVER_API) {
+    return fetch(`${BASE_URL}/courses/${courseId}`, {
+      method: 'DELETE'
+    }).then(handleResponse);
+  }
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const courseIndex = (mockDb.courses || []).findIndex(c => c.id === courseId);
@@ -403,15 +486,12 @@ export const deleteCourse = (courseId) => {
         return reject(new Error("Course not found"));
       }
 
-      // Remove the course
       mockDb.courses.splice(courseIndex, 1);
 
-      // Remove all exams associated with this course
       if (mockDb.exams) {
         mockDb.exams = mockDb.exams.filter(e => e.courseId !== courseId);
       }
 
-      // Clean up student enrollments
       if (mockDb.users) {
         mockDb.users.forEach(u => {
           if (u.enrolledCourses) {
@@ -425,4 +505,3 @@ export const deleteCourse = (courseId) => {
     }, DELAY);
   });
 };
-
