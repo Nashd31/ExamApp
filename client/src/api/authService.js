@@ -1,114 +1,67 @@
-import mockDb, { saveToStorage } from './mockDb.js';
-import config from '../services/config.js';
+import { apiFetch } from '../services/apiClient';
+import { setItem, removeItem } from '../services/storage';
 
-const DELAY = config.MOCK_API_DELAY;
-const BASE_URL = config.API_BASE_URL;
+/**
+ * Authenticates a user with email and password via the Express API.
+ * Saves the returned JWT token to storage and returns the user payload.
+ */
+export const login = async (email, password) => {
+  const response = await apiFetch('/auth/login', {
+    method: 'POST',
+    body: { email, password }
+  });
 
-// Helper to standardise responses and propagate backend errors properly to caller
-const handleResponse = async (res) => {
-    if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Request failed with status ${res.status}`);
-    }
-    if (res.status === 204) return;
-    return res.json();
-};
-
-// Utility function to strip the password from a user object before returning it.
-const omitPassword = (user) => {
-    const userCopy = { ...user };
-    delete userCopy.password;
-    return userCopy;
-};
-
-
-// Authenticates a user with their email and password (via API or mockDb fallback).
-export const login = (email, password) => {
-    if (config.USE_SERVER_API) {
-        return fetch(`${BASE_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        }).then(handleResponse);
-    }
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const user = mockDb.users.find(
-                (u) => u.email === email && u.password === password
-            );
-
-            if (user) {
-                resolve(omitPassword(user));
-            } else {
-                reject(new Error('Invalid credentials'));
-            }
-        }, DELAY);
-    });
+  const { token, ...user } = response;
+  
+  // Persist token in storage
+  setItem('token', token);
+  
+  return user;
 };
 
 /**
- * Registers a new user (via API or mockDb fallback).
+ * Registers a new user.
+ * Saves the returned JWT token to storage and returns the user payload.
  */
-export const register = (name, email, password, role) => {
-    if (config.USE_SERVER_API) {
-        return fetch(`${BASE_URL}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, role })
-        }).then(handleResponse);
-    }
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const exists = mockDb.users.some((u) => u.email === email);
-            if (exists) {
-                reject(new Error('Email already exists'));
-                return;
-            }
+export const register = async (name, email, password, role) => {
+  const response = await apiFetch('/auth/register', {
+    method: 'POST',
+    body: { name, email, password, role }
+  });
 
-            const newUser = {
-                id: `u${Date.now()}`,
-                name,
-                email,
-                password,
-                role,
-                ...(role === 'student' ? { enrolledCourses: [] } : {})
-            };
+  const { token, ...user } = response;
 
-            mockDb.users.push(newUser);
-            saveToStorage(mockDb);
-            resolve(omitPassword(newUser));
-        }, DELAY);
-    });
+  // Persist token in storage
+  setItem('token', token);
+
+  return user;
 };
 
 /**
- * Updates a user profile (via API or mockDb fallback).
+ * Updates an existing user's profile details.
+ * Returns the updated user object.
  */
-export const updateUserProfile = (userId, name, password, avatar, themeColor) => {
-    if (config.USE_SERVER_API) {
-        return fetch(`${BASE_URL}/auth/profile/${userId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, password, avatar, themeColor })
-        }).then(handleResponse);
-    }
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const userIndex = mockDb.users.findIndex((u) => u.id === userId);
-            if (userIndex === -1) {
-                return reject(new Error('User not found'));
-            }
+export const updateUserProfile = async (userId, name, password, avatar, themeColor) => {
+  const user = await apiFetch(`/auth/profile/${userId}`, {
+    method: 'PUT',
+    body: { name, password, avatar, themeColor }
+  });
 
-            const user = mockDb.users[userIndex];
-            user.name = name;
-            if (password) {
-                user.password = password;
-            }
-            user.avatar = avatar;
-            user.themeColor = themeColor;
+  return user;
+};
 
-            saveToStorage(mockDb);
-            resolve(omitPassword(user));
-        }, DELAY);
-    });
+/**
+ * Logs out the user by clearing the JWT token and user details from storage.
+ */
+export const logout = () => {
+  removeItem('token');
+  removeItem('user');
+  
+  // Defensive cleanup of any legacy or manually-created un-prefixed storage keys
+  try {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  } catch (e) {
+    // Ignore storage block errors
+  }
 };

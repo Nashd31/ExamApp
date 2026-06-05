@@ -16,11 +16,13 @@ const StudentPortal = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { showConfirm } = useDialog();
-  
+
   // Existing states
   const [examId, setExamId] = useState('');
   const [exam, setExam] = useState(null);
-  const [error, setError] = useState('');
+  const [connectionError, setConnectionError] = useState('');
+  const [searchError, setSearchError] = useState('');
+  const [courseError, setCourseError] = useState('');
   const [loading, setLoading] = useState(false);
   const [pastExams, setPastExams] = useState([]);
   const [loadingPast, setLoadingPast] = useState(() => !!user?.id);
@@ -49,23 +51,23 @@ const StudentPortal = () => {
   const handleFetchExam = async () => {
     if (!examId) return;
     setLoading(true);
-    setError('');
+    setSearchError('');
     setExam(null);
     try {
       const data = await getExamById(examId);
       const status = getExamStatus(data);
       if (status === 'Scheduled') {
         const message = 'This exam is not available yet.';
-        setError(message);
+        setSearchError(message);
       } else if (status === 'Published') {
         setExam(data);
       } else {
         const message = 'This exam is not available.';
-        setError(message);
+        setSearchError(message);
       }
     } catch (err) {
       const message = err?.message || 'Unable to find exam.';
-      setError(message);
+      setSearchError(message);
     } finally {
       setLoading(false);
     }
@@ -77,7 +79,7 @@ const StudentPortal = () => {
       return;
     }
     setLoadingPast(true);
-    setError('');
+    setConnectionError('');
     try {
       const [submissionsData, coursesData, examsData] = await Promise.all([
         getStudentSubmissions(user.name),
@@ -87,7 +89,7 @@ const StudentPortal = () => {
       setPastExams(submissionsData || []);
       setEnrolledCourses(coursesData || []);
       setAllExams(examsData || []);
-      
+
       if (initialLoad) {
         setSelectedCourseId(prev => {
           if (!prev && coursesData && coursesData.length > 0) {
@@ -97,7 +99,7 @@ const StudentPortal = () => {
         });
       }
     } catch (err) {
-      setError(err?.message || 'Failed to load portal data');
+      setConnectionError(err?.message || 'Failed to load portal data');
     } finally {
       setLoadingPast(false);
     }
@@ -108,6 +110,7 @@ const StudentPortal = () => {
     if (!user?.id) return;
     let active = true;
     const fetchInitialData = async () => {
+      setLoadingPast(true);
       try {
         const [submissionsData, coursesData, examsData] = await Promise.all([
           getStudentSubmissions(user.name),
@@ -127,7 +130,7 @@ const StudentPortal = () => {
         }
       } catch (err) {
         if (active) {
-          setError(err?.message || 'Failed to load portal data');
+          setConnectionError(err?.message || 'Failed to load portal data');
         }
       } finally {
         if (active) {
@@ -143,7 +146,7 @@ const StudentPortal = () => {
 
   // Handles leaving/unenrolling from a course
   const handleLeaveCourse = async (courseId, courseName) => {
-    setError('');
+    setCourseError('');
     const confirmed = await showConfirm(
       `Leave "${courseName}"?`,
       'You will lose access to its submissions.'
@@ -154,7 +157,7 @@ const StudentPortal = () => {
       setLoadingPast(true);
       await unenrollStudentFromCourse(user.id, courseId);
       showSuccess(`Successfully left course "${courseName}"`);
-      
+
       setEnrolledCourses(prev => {
         const nextCourses = prev.filter(c => c.id !== courseId);
         if (nextCourses.length > 0) {
@@ -164,10 +167,10 @@ const StudentPortal = () => {
         }
         return nextCourses;
       });
-      
+
       await loadPortalData(false);
     } catch (err) {
-      setError(err?.message || 'Failed to leave course');
+      setCourseError(err?.message || 'Failed to leave course');
     } finally {
       setLoadingPast(false);
     }
@@ -573,6 +576,22 @@ const StudentPortal = () => {
         </div>
       </div>
 
+      {connectionError && (
+        <div className="alert alert-danger alert-dismissible fade show rounded-3 p-3 mb-4 text-start" role="alert">
+          <div className="d-flex align-items-center gap-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div>
+              <strong>Error:</strong> {connectionError}
+            </div>
+          </div>
+          <button type="button" className="btn-close" onClick={() => setConnectionError('')} aria-label="Close"></button>
+        </div>
+      )}
+
       {/* 2. Main Portal Area */}
       {/* 2. Side-by-Side Sidebar and Content Area */}
       <div className="row g-4">
@@ -580,16 +599,18 @@ const StudentPortal = () => {
         <div className="col-lg-3 col-md-4">
           <div className="course-sidebar text-start">
             <h5 className="fw-bold mb-2 text-dark">My Courses</h5>
-            
+
             {/* Action Buttons at the Top */}
             <div className="d-flex flex-column gap-2">
-              <button 
+              <button
                 className="sidebar-add-exam-btn"
                 onClick={() => {
                   setIsSearchingExam(true);
                   setSelectedCourseId(null);
                   setReviewingExamId(null);
-                  setError('');
+                  setSearchError('');
+                  setConnectionError('');
+                  setCourseError('');
                 }}
               >
                 Take Exam by ID
@@ -614,21 +635,28 @@ const StudentPortal = () => {
               </div>
             )}
 
-            {enrolledCourses.length === 0 ? (
-              <div className="text-muted small my-auto">No courses enrolled.</div>
+            {loadingPast && enrolledCourses.length === 0 ? (
+              <div className="d-flex align-items-center text-muted small py-2 ps-1">
+                <span className="spinner-border spinner-border-sm me-2" role="status" style={{ width: '1rem', height: '1rem', color: 'var(--theme-color)', borderWidth: '0.15em' }}></span>
+                Loading courses...
+              </div>
+            ) : enrolledCourses.length === 0 ? (
+              <div className="text-muted small py-2 ps-1">No courses enrolled.</div>
             ) : filteredCourses.length === 0 ? (
               <div className="text-muted small my-3">No matching courses.</div>
             ) : (
               <ul className="sidebar-course-list">
                 {filteredCourses.map(c => (
-                  <li 
-                    key={c.id} 
+                  <li
+                    key={c.id}
                     className={`sidebar-course-item ${selectedCourseId === c.id && !isSearchingExam && !reviewingExamId ? 'active' : ''}`}
                     onClick={() => {
                       setSelectedCourseId(c.id);
                       setIsSearchingExam(false);
                       setReviewingExamId(null);
-                      setError('');
+                      setSearchError('');
+                      setConnectionError('');
+                      setCourseError('');
                     }}
                   >
                     <span className="course-title">{c.name}</span>
@@ -642,7 +670,14 @@ const StudentPortal = () => {
 
         {/* Right Side: Main Content Panel */}
         <div className="col-lg-9 col-md-8">
-          {reviewingExamId ? (
+          {loadingPast && enrolledCourses.length === 0 ? (
+            <div className="card portal-glass-card border-0 p-5 d-flex flex-column align-items-center justify-content-center">
+              <div className="spinner-border" role="status" style={{ color: 'var(--theme-color)' }}>
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-3 mb-0 text-muted">Loading portal data...</p>
+            </div>
+          ) : reviewingExamId ? (
             <ReviewExamViewer
               examId={reviewingExamId}
               studentName={user?.name}
@@ -653,7 +688,7 @@ const StudentPortal = () => {
             <div className="card portal-glass-card border-0 p-4 p-md-5 text-start">
               <h5 className="fw-bold text-dark mb-1">Direct Exam Search</h5>
               <p className="text-muted small mb-4">Or search for a specific test directly by entering its unique Exam ID.</p>
-              
+
               <form className="d-flex flex-column gap-3" onSubmit={(e) => { e.preventDefault(); handleFetchExam(); }}>
                 <div className="search-icon-wrapper w-100">
                   <input
@@ -674,16 +709,16 @@ const StudentPortal = () => {
                     className="btn btn-search py-2 px-4 btn-sm"
                     type="submit"
                     disabled={loading}
-                    style={{ height: '42px', color: 'white'}}
+                    style={{ height: '42px', color: 'white' }}
                   >
                     {loading ? 'Searching...' : 'Search Exam'}
                   </button>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="btn btn-outline-secondary py-2 px-4 rounded-3 btn-sm"
                     onClick={() => {
                       setIsSearchingExam(false);
-                      setError('');
+                      setSearchError('');
                     }}
                   >
                     Cancel
@@ -691,7 +726,7 @@ const StudentPortal = () => {
                 </div>
               </form>
 
-              {error && (
+              {searchError && (
                 <div className="alert-modern-error my-3">
                   <div className="d-flex align-items-center gap-2 flex-grow-1">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -699,9 +734,9 @@ const StudentPortal = () => {
                       <line x1="12" y1="8" x2="12" y2="12"></line>
                       <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    <span>{error}</span>
+                    <span>{searchError}</span>
                   </div>
-                  <button type="button" className="btn-close ms-auto" style={{ fontSize: '10px' }} onClick={() => setError('')} aria-label="Close"></button>
+                  <button type="button" className="btn-close ms-auto" style={{ fontSize: '10px' }} onClick={() => setSearchError('')} aria-label="Close"></button>
                 </div>
               )}
 
@@ -729,7 +764,7 @@ const StudentPortal = () => {
                       }
                     }}
                   >
-                    Begin Now 
+                    Begin Now
                   </button>
                 </div>
               )}
@@ -777,7 +812,7 @@ const StudentPortal = () => {
                     </div>
                   </div>
 
-                  {error && (
+                  {courseError && (
                     <div className="alert-modern-error mb-4">
                       <div className="d-flex align-items-center gap-2 flex-grow-1">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -785,9 +820,9 @@ const StudentPortal = () => {
                           <line x1="12" y1="8" x2="12" y2="12"></line>
                           <line x1="12" y1="16" x2="12.01" y2="16"></line>
                         </svg>
-                        <span>{error}</span>
+                        <span>{courseError}</span>
                       </div>
-                      <button type="button" className="btn-close ms-auto" style={{ fontSize: '10px' }} onClick={() => setError('')} aria-label="Close"></button>
+                      <button type="button" className="btn-close ms-auto" style={{ fontSize: '10px' }} onClick={() => setCourseError('')} aria-label="Close"></button>
                     </div>
                   )}
 
@@ -876,7 +911,7 @@ const StudentPortal = () => {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

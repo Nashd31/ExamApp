@@ -14,10 +14,12 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
   const [grades, setGrades] = useState({});
   const [notes, setNotes] = useState({});
   const [savingQuestionId, setSavingQuestionId] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError('');
         const subData = await getSubmissionById(submissionId);
         setSubmission(subData);
 
@@ -31,7 +33,7 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
         examData.questions.forEach((q, index) => {
           const key = q.id || index;
           initialNotes[key] = (subData.teacherNotes && subData.teacherNotes[key]) || '';
-          
+
           if (subData.manualGrades && subData.manualGrades[key] !== undefined) {
             initialGrades[key] = subData.manualGrades[key];
           } else {
@@ -53,7 +55,7 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
         setGrades(initialGrades);
         setNotes(initialNotes);
       } catch (err) {
-        showError(err.message || 'Error fetching grading data');
+        setError(err.message || 'Error fetching grading data');
       } finally {
         setLoading(false);
       }
@@ -112,13 +114,46 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="card portal-glass-card border-0">
+        <div className="card-body p-5 text-center">
+          <div className="alert alert-danger alert-modern-error mb-4 justify-content-center">
+            <div className="d-flex align-items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{error}</span>
+            </div>
+          </div>
+          <button className="btn btn-cancel-exam py-2 px-4 rounded-3 btn-sm" onClick={onBack}>
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!submission || !exam) {
     return (
-      <div className="card shadow border-0 p-4 rounded-4 text-center bg-white">
-        <h5 className="text-danger fw-bold mb-3">Grading record not found.</h5>
-        <button className="btn btn-outline-secondary px-4" onClick={onBack}>
-          Back
-        </button>
+      <div className="card portal-glass-card border-0">
+        <div className="card-body p-5 text-center">
+          <div className="alert alert-danger alert-modern-error mb-4 justify-content-center">
+            <div className="d-flex align-items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Grading record not found.</span>
+            </div>
+          </div>
+          <button className="btn btn-cancel-exam py-2 px-4 rounded-3 btn-sm" onClick={onBack}>
+            Back to Scores
+          </button>
+        </div>
       </div>
     );
   }
@@ -223,7 +258,8 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
             border: none;
             color: #ffffff;
             font-weight: 600;
-            padding: 7px 18px;
+            font-size: 15px;
+            padding: 6px 16px;
             border-radius: 10px;
             transition: all 0.2s ease;
             box-shadow: 0 4px 10px var(--theme-glow);
@@ -234,11 +270,36 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
         .btn-grade-save:hover:not(:disabled) {
             transform: translateY(-1px);
             box-shadow: 0 6px 14px var(--theme-glow);
+            color: #ffffff;
         }
         .btn-grade-save:disabled {
-            background: #94a3b8;
+            background: var(--theme-gradient);
             cursor: not-allowed;
             box-shadow: none;
+            color: #ffffff;
+        }
+        .btn-cancel-exam {
+            background: rgba(148, 163, 184, 0.06);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            color: #475569;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-cancel-exam:hover {
+            background: rgba(148, 163, 184, 0.12);
+            color: #1e293b;
+            transform: translateY(-1px);
+        }
+        .alert-modern-error {
+            background: rgba(244, 63, 94, 0.07);
+            border: 1px solid rgba(244, 63, 94, 0.15);
+            color: #e11d48;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .option-badge-success {
             background-color: #d1fae5;
@@ -427,19 +488,7 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
                         onClick={() => handleSaveGrade(key)}
                         disabled={isPointsInvalid || isSaving}
                       >
-                        {isSaving ? (
-                          <>
-                            <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="me-1">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            Save Grade & Notes
-                          </>
-                        )}
+                        {isSaving ? 'Saving...' : 'Save Grade & Notes'}
                       </button>
                     </div>
                   </div>
