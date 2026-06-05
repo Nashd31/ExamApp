@@ -41,6 +41,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
     };
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const [courseDropdownOpen, setCourseDropdownOpen] = useState(false);
   const [openQuestionTypeDropdownIndex, setOpenQuestionTypeDropdownIndex] = useState(null);
 
@@ -225,6 +226,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
     }
 
     try {
+      setLoading(true);
       let savedExam;
       const isNew = editingExam.isNew || !editingExam.id;
       if (isNew) {
@@ -239,6 +241,8 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
       onSaveSuccess(savedExam, isNew);
     } catch (err) {
       setError('Failed to save: ' + (err.message || err));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -493,13 +497,13 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
         .btn-save-exam:hover:not(:disabled) {
             transform: translateY(-1px);
             box-shadow: 0 6px 16px var(--theme-glow);
+            color: #ffffff;
         }
         .btn-save-exam:disabled {
-            background: #cbd5e1;
-            color: #94a3b8;
-            box-shadow: none;
+            background: var(--theme-gradient);
             cursor: not-allowed;
-            transform: none;
+            box-shadow: none;
+            color: #ffffff;
         }
 
         .btn-cancel-exam {
@@ -860,17 +864,17 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
 
         {/* Action Buttons */}
         <div className="d-flex gap-3 justify-content-end align-items-center mt-4 pt-3 border-top">
-          <button className="btn btn-add-question py-2 px-4 rounded-3 btn-sm" onClick={handleAddQuestion}>
+          <button className="btn btn-add-question py-2 px-4 rounded-3 btn-sm" disabled={loading} onClick={handleAddQuestion}>
             + Add New Question
           </button>
           <button
             className="btn btn-save-exam py-2 px-5 rounded-3 btn-sm"
             onClick={handleSave}
-            disabled={totalPoints !== 100}
+            disabled={totalPoints !== 100 || loading}
           >
-            {editingExam?.isNew ? 'Create Exam' : 'Save Changes'}
+            {loading ? (editingExam?.isNew ? 'Creating...' : 'Saving...') : (editingExam?.isNew ? 'Create Exam' : 'Save Changes')}
           </button>
-          <button className="btn btn-cancel-exam py-2 px-4 rounded-3 btn-sm" onClick={onCancel}>
+          <button className="btn btn-cancel-exam py-2 px-4 rounded-3 btn-sm" disabled={loading} onClick={onCancel}>
             Cancel
           </button>
         </div>
