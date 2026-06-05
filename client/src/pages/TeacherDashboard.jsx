@@ -26,12 +26,16 @@ const TeacherDashboard = () => {
   const [viewingScoresExamId, setViewingScoresExamId] = useState(() => location.state?.viewScoresExamId || null);
   const [gradingSubmissionId, setGradingSubmissionId] = useState(null);
   const [submissionCounts, setSubmissionCounts] = useState({});
-  const [error, setError] = useState('');
-  const [errorExamId, setErrorExamId] = useState(null);
+  const [connectionError, setConnectionError] = useState('');
+  const [courseError, setCourseError] = useState('');
+  const [examError, setExamError] = useState('');
+  const [examErrorId, setExamErrorId] = useState(null);
 
-  const clearError = () => {
-    setError('');
-    setErrorExamId(null);
+  const clearAllErrors = () => {
+    setConnectionError('');
+    setCourseError('');
+    setExamError('');
+    setExamErrorId(null);
   };
 
   // Course Management States
@@ -61,8 +65,7 @@ const TeacherDashboard = () => {
   // Used by event handlers (create course, delete course, toggle publish) to refresh data.
   const loadDashboardData = async () => {
     if (!user?.id) return;
-    setError('');
-    setErrorExamId(null);
+    clearAllErrors();
     try {
       // 1. Fetch courses owned by this teacher
       const myCourses = await getCoursesByTeacher(user.id);
@@ -95,7 +98,7 @@ const TeacherDashboard = () => {
       }
       setSubmissionCounts(counts);
     } catch (err) {
-      setError('Error fetching dashboard data: ' + (err.message || err));
+      setConnectionError(err.message || 'Error fetching dashboard data');
     } finally {
       setLoading(false);
     }
@@ -106,12 +109,12 @@ const TeacherDashboard = () => {
     if (!user?.id) return;
     let active = true;
     const init = async () => {
+      setLoading(true);
       try {
         const myCourses = await getCoursesByTeacher(user.id);
         if (!active) return;
         // Reset errors only after the first async result is in
-        setError('');
-        setErrorExamId(null);
+        clearAllErrors();
         setCourses(myCourses);
         setSelectedCourseId(prev => (!prev && myCourses.length > 0 ? myCourses[0].id : prev));
 
@@ -133,7 +136,7 @@ const TeacherDashboard = () => {
         if (!active) return;
         setSubmissionCounts(counts);
       } catch (err) {
-        if (active) setError('Error fetching dashboard data: ' + (err.message || err));
+        if (active) setConnectionError(err.message || 'Error fetching dashboard data');
       } finally {
         if (active) setLoading(false);
       }
@@ -144,30 +147,30 @@ const TeacherDashboard = () => {
 
   // Prepares an exam for editing by setting local editing state
   const handleEditClick = (exam) => {
-    clearError();
+    clearAllErrors();
     setSelectedExam(exam);
     setIsEditing(true);
   };
 
   // Prepares editor for creating a new exam
   const handleCreateClick = () => {
-    clearError();
+    clearAllErrors();
     setSelectedExam(null);
     setIsEditing(true);
   };
 
   const handleTogglePublishGrades = async (exam) => {
-    clearError();
+    clearAllErrors();
     // Validate: exam must be completed and have submissions
     const status = getExamStatus(exam);
     if (status !== 'Done') {
-      setError('Grades can only be published once the exam has accomplished.');
-      setErrorExamId(exam.id);
+      setExamError('Grades can only be published once the exam has accomplished.');
+      setExamErrorId(exam.id);
       return;
     }
     if (submissionCounts[exam.id] === 0) {
-      setError('Cannot publish grades - no student submissions yet.');
-      setErrorExamId(exam.id);
+      setExamError('Cannot publish grades - no student submissions yet.');
+      setExamErrorId(exam.id);
       return;
     }
 
@@ -178,15 +181,15 @@ const TeacherDashboard = () => {
       showSuccess(`Grades ${updated.areGradesPublished ? 'published' : 'unpublished'} successfully.`);
       loadDashboardData();
     } catch (err) {
-      setError('Failed to toggle grades publish status: ' + (err.message || err));
-      setErrorExamId(exam.id);
+      setExamError('Failed to toggle grades publish status: ' + (err.message || err));
+      setExamErrorId(exam.id);
       setLoading(false);
     }
   };
 
   // Prompts for confirmation and deletes the specified exam if confirmed.
   const handleDeleteClick = async (examId) => {
-    clearError();
+    clearAllErrors();
     const confirmed = await showConfirm(
       'Are you sure you want to delete this exam?',
       'This action cannot be undone.'
@@ -204,8 +207,8 @@ const TeacherDashboard = () => {
         container.scrollTop = 0;
       }
     } catch (err) {
-      setError('Failed to delete exam: ' + (err.message || err));
-      setErrorExamId(examId);
+      setExamError('Failed to delete exam: ' + (err.message || err));
+      setExamErrorId(examId);
     }
   };
 
@@ -217,20 +220,20 @@ const TeacherDashboard = () => {
     }
     setIsEditing(false);
     setSelectedExam(null);
-    clearError();
+    clearAllErrors();
   };
 
   const onCancel = () => {
     setIsEditing(false);
     setSelectedExam(null);
-    clearError();
+    clearAllErrors();
   };
 
   const handleCreateCourseSubmit = async (e) => {
     e.preventDefault();
-    clearError();
+    clearAllErrors();
     if (!newCourseName.trim() || !newCourseCode.trim()) {
-      setError('Course Name and Course Code are required.');
+      setCourseError('Course Name and Course Code are required.');
       return;
     }
     try {
@@ -245,14 +248,14 @@ const TeacherDashboard = () => {
       }
       await loadDashboardData(); // reload courses and exams
     } catch (err) {
-      setError(err.message || 'Failed to create course.');
+      setCourseError(err.message || 'Failed to create course.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteCourse = async (courseId, courseName) => {
-    clearError();
+    clearAllErrors();
     const confirmed = await showConfirm(
       `Delete course "${courseName}"?`,
       'This will permanently delete all its exams and remove it from student enrollments.'
@@ -273,7 +276,7 @@ const TeacherDashboard = () => {
       
       await loadDashboardData();
     } catch (err) {
-      setError('Failed to delete course: ' + (err.message || err));
+      setCourseError('Failed to delete course: ' + (err.message || err));
     } finally {
       setLoading(false);
     }
@@ -294,7 +297,7 @@ const TeacherDashboard = () => {
 
   // Render view: Default main dashboard listing all exams
   return (
-    <div className="container mt-2 mb-5 teacher-dashboard-container">
+    <div className="container-fluid mt-2 mb-5 teacher-dashboard-container">
       <style>{`
         .teacher-dashboard-container {
             animation: fadeInPortal 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -540,6 +543,11 @@ const TeacherDashboard = () => {
             box-shadow: 0 6px 16px var(--theme-glow);
             color: white;
         }
+        .btn-save-exam:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            color: white;
+        }
         .btn-cancel-exam {
             background: rgba(148, 163, 184, 0.06);
             border: 1px solid rgba(148, 163, 184, 0.18);
@@ -725,6 +733,22 @@ const TeacherDashboard = () => {
         </div>
       </div>
 
+      {connectionError && (
+        <div className="alert alert-danger alert-dismissible fade show rounded-3 p-3 mb-4 text-start" role="alert">
+          <div className="d-flex align-items-center gap-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <div>
+              <strong>Error:</strong> {connectionError}
+            </div>
+          </div>
+          <button type="button" className="btn-close" onClick={() => setConnectionError('')} aria-label="Close"></button>
+        </div>
+      )}
+
       {/* 2. Side-by-Side Sidebar and Content Area */}
       <div className="row g-4">
         {/* Left Side: Course Sidebar */}
@@ -773,8 +797,13 @@ const TeacherDashboard = () => {
               </div>
             )}
 
-            {courses.length === 0 ? (
-              <div className="text-muted small my-auto">No courses found.</div>
+            {loading && courses.length === 0 ? (
+              <div className="d-flex align-items-center text-muted small py-2 ps-1">
+                <span className="spinner-border spinner-border-sm me-2" role="status" style={{ width: '1rem', height: '1rem', color: 'var(--theme-color)', borderWidth: '0.15em' }}></span>
+                Loading courses...
+              </div>
+            ) : courses.length === 0 ? (
+              <div className="text-muted small py-2 ps-1">No courses found.</div>
             ) : filteredCourses.length === 0 ? (
               <div className="text-muted small my-3">No matching courses.</div>
             ) : (
@@ -802,7 +831,14 @@ const TeacherDashboard = () => {
 
         {/* Right Side: Main Content Panel */}
         <div className="col-lg-9 col-md-8">
-          {gradingSubmissionId ? (
+          {loading && courses.length === 0 ? (
+            <div className="card portal-glass-card border-0 p-5 d-flex flex-column align-items-center justify-content-center">
+              <div className="spinner-border" role="status" style={{ color: 'var(--theme-color)' }}>
+                <span className="visually-hidden">Loading...</span>
+              </div>
+              <p className="mt-3 mb-0 text-muted">Loading dashboard data...</p>
+            </div>
+          ) : gradingSubmissionId ? (
             <GradeSubmissionViewer
               submissionId={gradingSubmissionId}
               onBack={() => setGradingSubmissionId(null)}
@@ -852,21 +888,22 @@ const TeacherDashboard = () => {
                   />
                 </div>
                 <div className="d-flex gap-2">
-                  <button type="submit" className="btn btn-save-exam py-2 px-4 rounded-3 btn-sm">
-                    Save Course
+                  <button type="submit" className="btn btn-save-exam py-2 px-4 rounded-3 btn-sm" disabled={loading}>
+                    {loading ? 'Saving...' : 'Save Course'}
                   </button>
                   <button
                     type="button"
                     className="btn btn-cancel-exam py-2 px-4 rounded-3 btn-sm"
+                    disabled={loading}
                     onClick={() => {
                       setIsCreatingCourse(false);
-                      clearError();
+                      clearAllErrors();
                     }}
                   >
                     Cancel
                   </button>
                 </div>
-                {error && !errorExamId && (
+                {courseError && (
                   <div className="alert alert-danger alert-modern-error mt-3 mb-0 py-2 px-3">
                     <div className="d-flex align-items-center gap-2">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -874,7 +911,7 @@ const TeacherDashboard = () => {
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                       </svg>
-                      <span>{error}</span>
+                      <span>{courseError}</span>
                     </div>
                   </div>
                 )}
@@ -928,7 +965,7 @@ const TeacherDashboard = () => {
 
                     {loading ? (
                       <div className="text-center my-5 py-4">
-                        <div className="spinner-border text-success" role="status">
+                        <div className="spinner-border" role="status" style={{ color: 'var(--theme-color)' }}>
                           <span className="visually-hidden">Loading...</span>
                         </div>
                         <p className="text-muted mt-2 small">Loading exams list...</p>
@@ -942,7 +979,7 @@ const TeacherDashboard = () => {
                       </div>
                     ) : (
                       <div className="exams-list-container">
-                        {error && !errorExamId && (
+                        {courseError && (
                           <div className="alert alert-danger alert-modern-error mb-4 py-2 px-3">
                             <div className="d-flex align-items-center gap-2">
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -950,7 +987,7 @@ const TeacherDashboard = () => {
                                 <line x1="12" y1="8" x2="12" y2="12"></line>
                                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
                               </svg>
-                              <span>{error}</span>
+                              <span>{courseError}</span>
                             </div>
                           </div>
                         )}
@@ -1033,7 +1070,7 @@ const TeacherDashboard = () => {
                                   Delete
                                 </button>
                               </div>
-                              {error && errorExamId === exam.id && (
+                              {examError && examErrorId === exam.id && (
                                 <div className="alert alert-danger alert-modern-error mt-3 mb-0 py-2 px-3 w-100">
                                   <div className="d-flex align-items-center gap-2">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1041,7 +1078,7 @@ const TeacherDashboard = () => {
                                       <line x1="12" y1="8" x2="12" y2="12"></line>
                                       <line x1="12" y1="16" x2="12.01" y2="16"></line>
                                     </svg>
-                                    <span>{error}</span>
+                                    <span>{examError}</span>
                                   </div>
                                 </div>
                               )}

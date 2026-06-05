@@ -336,6 +336,7 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCharts, setShowCharts] = useState(false);
+  const [error, setError] = useState('');
 
   const getGradingStatus = (sub) => {
     if (!exam || !exam.questions) return { text: 'Unknown', className: 'review-pending' };
@@ -362,14 +363,19 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
   useEffect(() => {
     const fetchScoresData = async () => {
       try {
+        setError('');
         const [fetchedExam, fetchedSubmissions] = await Promise.all([
           getExamById(examId),
           getExamSubmissions(examId)
         ]);
-        setExam(fetchedExam);
-        setSubmissions(fetchedSubmissions);
-      } catch (error) {
-        showError('Failed to fetch scores data: ' + (error.message || error));
+        if (!fetchedExam) {
+          setError('Exam not found.');
+        } else {
+          setExam(fetchedExam);
+          setSubmissions(fetchedSubmissions || []);
+        }
+      } catch (err) {
+        setError(err.message || 'Failed to fetch scores data');
       } finally {
         setLoading(false);
       }
@@ -391,12 +397,21 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
     );
   }
 
-  if (!exam) {
+  if (error) {
     return (
       <div className="card portal-glass-card border-0">
-        <div className="card-body p-4">
-          <div className="alert alert-danger mb-3">Exam not found.</div>
-          <button className="btn btn-primary" onClick={onBack}>
+        <div className="card-body p-5 text-center">
+          <div className="alert alert-danger alert-modern-error mb-4 justify-content-center">
+            <div className="d-flex align-items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{error}</span>
+            </div>
+          </div>
+          <button className="btn btn-cancel-exam py-2 px-4 rounded-3 btn-sm" onClick={onBack}>
             Back to Dashboard
           </button>
         </div>
@@ -534,6 +549,30 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
             color: #ffffff;
             border-color: var(--theme-color);
             transform: translateY(-0.5px);
+        }
+
+        .btn-cancel-exam {
+            background: rgba(148, 163, 184, 0.06);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            color: #475569;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-cancel-exam:hover {
+            background: rgba(148, 163, 184, 0.12);
+            color: #1e293b;
+            transform: translateY(-1px);
+        }
+        .alert-modern-error {
+            background: rgba(244, 63, 94, 0.07);
+            border: 1px solid rgba(244, 63, 94, 0.15);
+            color: #e11d48;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
       `}</style>
 

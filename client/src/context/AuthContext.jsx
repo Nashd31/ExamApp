@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login as authLogin, register as authRegister, updateUserProfile as authUpdateUserProfile } from '../api/authService';
+import { login as authLogin, register as authRegister, updateUserProfile as authUpdateUserProfile, logout as authLogout } from '../api/authService';
 import { getItem, setItem, removeItem } from '../services/storage';
 import { logError } from '../services/logger';
 import { AuthContext } from '../hooks/useAuth';
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
 
     // Clears user session from state and storage, then redirects to login.
     const logout = () => {
-        removeItem('user');
+        authLogout();
         setUser(null);
         navigate('/login');
     };

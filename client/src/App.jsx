@@ -27,7 +27,7 @@ const AppContent = () => {
 
       <div id="main-scroll-container" style={contentWrapperStyle}>
         <main style={mainStyle}>
-          <div className="container py-3">
+          <div className="container-fluid py-3 px-4" style={{ maxWidth: '1400px' }}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route
