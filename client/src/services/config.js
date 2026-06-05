@@ -11,7 +11,7 @@ const config = {
     API_TIMEOUT: 5000,
     MAX_RETRIES: 3,
     USE_SERVER_API: true,
-    API_BASE_URL: 'http://localhost:5000/api',
+    API_BASE_URL: 'https://examappserver.onrender.com/api',
 };
 
 export default config;
