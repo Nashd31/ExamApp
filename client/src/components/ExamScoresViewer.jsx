@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { getExamById, getExamSubmissions } from '../api/examService';
-import { showError } from '../services/notify';
 import { formatDate } from '../utils/examUtils';
 
 /**

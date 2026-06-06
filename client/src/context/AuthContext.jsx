@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as authLogin, register as authRegister, updateUserProfile as authUpdateUserProfile, logout as authLogout } from '../api/authService';
-import { getItem, setItem, removeItem } from '../services/storage';
+import { getItem, setItem } from '../services/storage';
 import { logError } from '../services/logger';
 import { AuthContext } from '../hooks/useAuth';
 

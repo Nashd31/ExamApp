@@ -48,7 +48,7 @@ export const apiFetch = async (endpoint, options = {}) => {
   } catch (err) {
     // Customize browser network connection errors (like server offline) to make them descriptive
     if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
-      throw new Error('Could not connect to the server.');
+      throw new Error('Could not connect to the server.', { cause: err });
     }
     throw err;
   }
