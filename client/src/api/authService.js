@@ -61,7 +61,7 @@ export const logout = () => {
   try {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-  } catch (e) {
+  } catch {
     // Ignore storage block errors
   }
 };

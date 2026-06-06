@@ -41,4 +41,16 @@ html {
 @keyframes dialogSlideUp {
   from { opacity: 0; transform: translateY(24px) scale(0.95); }
   to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+.footer-link {
+  color: rgba(255, 255, 255, 0.8) !important;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.footer-link:hover {
+  color: #5b7cfa !important;
+  text-shadow: 0 0 8px rgba(91, 124, 250, 0.3);
 }
