@@ -25,6 +25,10 @@ app.use((req, res, next) => {
 });
 
 // Mount Routes
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', message: 'Backend server is running successfully!' });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/courses', courseRoutes);
