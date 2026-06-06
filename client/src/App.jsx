@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation, Link } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentPortal from './pages/StudentPortal';
@@ -10,6 +10,8 @@ import { AuthProvider } from './context/AuthContext';
 import { DialogProvider } from './context/DialogContext';
 import Auth from './pages/Auth';
 import Home from './pages/Home';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
 
 /**
  * Layout content component that has access to React Router's location context.
@@ -30,6 +32,8 @@ const AppContent = () => {
           <div className="container-fluid py-3 px-4" style={{ maxWidth: '1400px' }}>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
               <Route
                 path="/login"
                 element={
@@ -75,14 +79,21 @@ const AppContent = () => {
         </main>
 
         {!hideFooter && (
-          <footer className="border-top py-3 text-center text-muted bg-dark text-white">
-            <div className="container text-white">
-              &copy; 2026 E-Test System - Prepared for Node.js Backend
+          <footer className="border-top py-3 text-center bg-dark text-white">
+            <div className="container d-flex justify-content-center align-items-center gap-2 flex-wrap">
+              <span className="opacity-75">&copy; 2026 E-Test System -</span>
+              <Link to="/privacy-policy" className="footer-link">
+                Privacy Policy
+              </Link>
+              <span className="text-white opacity-25">|</span>
+              <Link to="/terms-and-conditions" className="footer-link">
+                Terms & Conditions
+              </Link>
             </div>
           </footer>
         )}
       </div>
-    </div>
+    </div >
   );
 }
 
