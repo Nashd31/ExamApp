@@ -1,5 +1,5 @@
 const express = require('express');
-const { getAllExams, getExamById, createExam, updateExam, deleteExam } = require('../controllers/examController');
+const { getAllExams, getExamById, createExam, updateExam, adjustExam, deleteExam } = require('../controllers/examController');
 const { protectRoute, requireRole } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -22,6 +22,7 @@ router.get('/:id', protectRoute, getExamById);
 // Teacher-only modification routes
 router.post('/', protectRoute, requireRole('teacher'), createExam);
 router.put('/:id', protectRoute, requireRole('teacher'), updateExam);
+router.patch('/:id/adjust', protectRoute, requireRole('teacher'), adjustExam);
 router.delete('/:id', protectRoute, requireRole('teacher'), deleteExam);
 
 module.exports = router;

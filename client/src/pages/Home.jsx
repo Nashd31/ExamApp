@@ -323,7 +323,7 @@ const Home = () => {
         </div>
         <div className="col-md-4">
           <div className="card stat-card p-4 text-center shadow-sm">
-            <h2 className="display-6 fw-bold">98.7%</h2>
+            <h2 className="display-6 fw-bold">100%</h2>
             <p className="lead small text-light opacity-75 mb-0">Evaluation Accuracy</p>
           </div>
         </div>

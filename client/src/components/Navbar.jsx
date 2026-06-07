@@ -22,6 +22,16 @@ const Navbar = () => {
     const avatarGradient = 'var(--theme-gradient)';
     const avatarContent = user?.avatar && user.avatar !== 'initials' ? user.avatar : firstLetter;
 
+    const closeMenu = () => {
+        const navbarCollapse = document.getElementById('navbarNav');
+        if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+            const toggler = document.querySelector('.navbar-toggler');
+            if (toggler) {
+                toggler.click();
+            }
+        }
+    };
+
     return (
         <nav className="navbar navbar-expand-lg navbar-dark modern-navbar px-4 py-3">
             <style>{`
@@ -193,7 +203,7 @@ const Navbar = () => {
             `}</style>
 
             <div className="container-fluid px-2">
-                <NavLink className="navbar-brand d-flex align-items-center gap-2" to="/">
+                <NavLink className="navbar-brand d-flex align-items-center gap-2" to="/" onClick={closeMenu}>
                     <div className="navbar-logo-emblem">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -224,6 +234,7 @@ const Navbar = () => {
                                         isActive ? 'modern-nav-link active' : 'modern-nav-link'
                                     }
                                     to="/teacher"
+                                    onClick={closeMenu}
                                 >
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -243,6 +254,7 @@ const Navbar = () => {
                                         isActive ? 'modern-nav-link active' : 'modern-nav-link'
                                     }
                                     to="/student"
+                                    onClick={closeMenu}
                                 >
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -255,7 +267,7 @@ const Navbar = () => {
 
                         {user && (
                             <li className="nav-item ms-lg-2">
-                                <div className="user-avatar-badge" style={{ cursor: 'pointer' }} onClick={() => setIsSettingsOpen(true)}>
+                                <div className="user-avatar-badge" style={{ cursor: 'pointer' }} onClick={() => { setIsSettingsOpen(true); closeMenu(); }}>
                                     <div className="user-avatar" style={{ background: avatarGradient }}>
                                         {avatarContent}
                                     </div>
@@ -272,13 +284,14 @@ const Navbar = () => {
                                 <Link
                                     className="btn btn-login-nav"
                                     to="/login"
+                                    onClick={closeMenu}
                                 >
                                     Login
                                 </Link>
                             </li>
                         ) : (
                             <li className="nav-item ms-lg-2">
-                                <button className="btn btn-logout" onClick={logout}>
+                                <button className="btn btn-logout" onClick={() => { logout(); closeMenu(); }}>
                                     Logout
                                 </button>
                             </li>

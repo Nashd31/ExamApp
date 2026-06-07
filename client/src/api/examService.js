@@ -92,13 +92,6 @@ export const updateSubmissionGrade = (submissionId, questionId, points, notes) =
 };
 
 /**
- * Retrieves all courses.
- */
-export const getAllCourses = () => {
-  return apiFetch('/courses');
-};
-
-/**
  * Retrieves courses taught by a specific teacher.
  */
 export const getCoursesByTeacher = (teacherId) => {
@@ -115,15 +108,6 @@ export const createCourse = (courseName, courseCode, teacherId) => {
   });
 };
 
-/**
- * Enrolls a student in a course by course code.
- */
-export const enrollStudentInCourse = (studentId, courseCode) => {
-  return apiFetch('/courses/enroll', {
-    method: 'POST',
-    body: { studentId, courseCode }
-  });
-};
 
 /**
  * Retrieves courses a student is enrolled in.
@@ -138,6 +122,16 @@ export const getStudentEnrolledCourses = (studentId) => {
 export const unenrollStudentFromCourse = (studentId, courseId) => {
   return apiFetch(`/courses/${courseId}/student/${studentId}`, {
     method: 'DELETE'
+  });
+};
+
+/**
+ * Adjusts exam settings (title, duration, endDate, passGrade, factor).
+ */
+export const adjustExam = (examId, adjustments) => {
+  return apiFetch(`/exams/${examId}/adjust`, {
+    method: 'PATCH',
+    body: adjustments
   });
 };
 
