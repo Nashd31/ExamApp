@@ -198,8 +198,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
           .avatar-grid {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 6px;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
           }
 
           .avatar-select-btn {
@@ -210,7 +210,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
+            font-size: 22px;
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             color: rgba(255, 255, 255, 0.6);
@@ -219,7 +219,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
           }
 
           .avatar-select-btn.initials-btn {
-            font-size: 11px;
+            font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 0.2px;
           }
@@ -236,6 +236,35 @@ const SettingsModal = ({ isOpen, onClose }) => {
             box-shadow: 0 4px 12px var(--theme-glow);
             transform: scale(1.06) translateY(-1px);
             color: #ffffff;
+          }
+
+          .settings-avatar-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+          }
+
+          .avatar-options-container {
+            flex-grow: 1;
+            min-width: 0;
+          }
+
+          @media (max-width: 480px) {
+            .settings-card {
+              padding: 1.25rem 1.25rem;
+              border-radius: 20px;
+              gap: 16px;
+              max-height: 90vh;
+              overflow-y: auto;
+            }
+            .settings-avatar-section {
+              flex-direction: column;
+              text-align: center;
+              gap: 16px;
+            }
+            .avatar-options-container {
+              width: 100%;
+            }
           }
 
           .color-palette {
@@ -387,11 +416,11 @@ const SettingsModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Avatar Section (Preview + Options) */}
-          <div className="d-flex align-items-center gap-3">
+          <div className="settings-avatar-section">
             <div className="avatar-preview-badge" style={{ background: 'var(--theme-gradient)', flexShrink: 0 }}>
               {avatar === 'initials' ? firstLetter : avatar}
             </div>
-            <div className="flex-grow-1">
+            <div className="avatar-options-container">
               <div className="settings-section-title">Select Avatar Symbol</div>
               <div className="avatar-grid">
                 {avatarOptions.map((opt) => (

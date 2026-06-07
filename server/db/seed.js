@@ -79,8 +79,8 @@ const seedDatabase = async () => {
       const creatorId = exam.creatorId || 1; // Fallback to first user (teacher)
       
       await db.query(`
-        INSERT INTO exams (id, title, course_id, duration, pass_grade, start_date, end_date, are_grades_published, creator_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO exams (id, title, course_id, duration, pass_grade, start_date, end_date, are_grades_published, factor, creator_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       `, [
         exam.id,
         exam.title,
@@ -90,6 +90,7 @@ const seedDatabase = async () => {
         exam.startDate,
         exam.endDate,
         exam.areGradesPublished || false,
+        exam.factor || 0,
         creatorId
       ]);
 

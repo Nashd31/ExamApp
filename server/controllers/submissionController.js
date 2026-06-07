@@ -112,9 +112,10 @@ const submitExam = async (req, res, next) => {
 
     // Return the final submission object
     const finalSubResult = await db.query(`
-      SELECT s.*, u.name as student_name
+      SELECT s.*, u.name as student_name, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
+      JOIN exams e ON s.exam_id = e.id
       WHERE s.id = $1
     `, [newSubId]);
 
@@ -155,12 +156,16 @@ const formatSubmission = async (subRow) => {
     }
   });
 
+  const rawScore = subRow.score;
+  const factor = subRow.factor || 0;
+  const adjustedScore = Math.min(rawScore + factor, 100);
+
   return {
     id: subRow.id,
     studentName: subRow.student_name,
     studentId: subRow.student_id,
     examId: subRow.exam_id,
-    score: subRow.score,
+    score: adjustedScore,
     status: subRow.status,
     answers: answersMap,
     manualGrades,
@@ -182,7 +187,7 @@ const getMySubmissions = async (req, res, next) => {
   try {
     const result = await db.query(`
       SELECT s.id as "submissionId", s.exam_id as "examId", s.score, s.submitted_at as "submittedAt",
-             e.title, e.pass_grade as "passGrade", e.are_grades_published as "areGradesPublished"
+             e.title, e.pass_grade as "passGrade", e.are_grades_published as "areGradesPublished", e.factor
       FROM submissions s
       JOIN exams e ON s.exam_id = e.id
       WHERE s.student_id = $1
@@ -193,7 +198,7 @@ const getMySubmissions = async (req, res, next) => {
     const formatted = result.rows.map(r => ({
       examId: r.examId,
       title: r.title || 'Unknown Exam',
-      score: r.score,
+      score: Math.min(r.score + (r.factor || 0), 100),
       passGrade: r.passGrade || 50,
       areGradesPublished: r.areGradesPublished !== false,
       submittedAt: r.submittedAt
@@ -213,9 +218,10 @@ const getExamSubmissions = async (req, res, next) => {
 
   try {
     const result = await db.query(`
-      SELECT s.*, u.name as student_name
+      SELECT s.*, u.name as student_name, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
+      JOIN exams e ON s.exam_id = e.id
       WHERE s.exam_id = $1
       ORDER BY s.submitted_at DESC
     `, [examId]);
@@ -249,9 +255,10 @@ const getStudentExamSubmission = async (req, res, next) => {
     const studentId = studentCheck.rows[0].id;
 
     const result = await db.query(`
-      SELECT s.*, u.name as student_name
+      SELECT s.*, u.name as student_name, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
+      JOIN exams e ON s.exam_id = e.id
       WHERE s.exam_id = $1 AND s.student_id = $2
     `, [examId, studentId]);
 
@@ -274,9 +281,10 @@ const getSubmissionById = async (req, res, next) => {
 
   try {
     const result = await db.query(`
-      SELECT s.*, u.name as student_name
+      SELECT s.*, u.name as student_name, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
+      JOIN exams e ON s.exam_id = e.id
       WHERE s.id = $1
     `, [id]);
 
@@ -367,9 +375,10 @@ const updateManualGrade = async (req, res, next) => {
 
     // 5. Return updated submission object
     const updatedSubResult = await db.query(`
-      SELECT s.*, u.name as student_name
+      SELECT s.*, u.name as student_name, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
+      JOIN exams e ON s.exam_id = e.id
       WHERE s.id = $1
     `, [id]);
     

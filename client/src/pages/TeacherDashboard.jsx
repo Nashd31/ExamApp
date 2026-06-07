@@ -8,6 +8,7 @@ import { getExamStatus, formatDate } from '../utils/examUtils';
 import ExamEditor from '../components/ExamEditor';
 import ExamScoresViewer from '../components/ExamScoresViewer';
 import GradeSubmissionViewer from '../components/GradeSubmissionViewer';
+import ExamAdjustment from '../components/ExamAdjustment';
 
 /**
  * TeacherDashboard Component
@@ -23,6 +24,7 @@ const TeacherDashboard = () => {
   const [loading, setLoading] = useState(() => !!user?.id);
   const [selectedExam, setSelectedExam] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAdjusting, setIsAdjusting] = useState(false);
   const [viewingScoresExamId, setViewingScoresExamId] = useState(() => location.state?.viewScoresExamId || null);
   const [gradingSubmissionId, setGradingSubmissionId] = useState(null);
   const [submissionCounts, setSubmissionCounts] = useState({});
@@ -59,7 +61,7 @@ const TeacherDashboard = () => {
     if (container) {
       container.scrollTop = 0;
     }
-  }, [isEditing, viewingScoresExamId, gradingSubmissionId, selectedCourseId, isCreatingCourse]);
+  }, [isEditing, isAdjusting, viewingScoresExamId, gradingSubmissionId, selectedCourseId, isCreatingCourse]);
 
   // Fetches courses and exams from the server and updates local state.
   // Used by event handlers (create course, delete course, toggle publish) to refresh data.
@@ -152,6 +154,12 @@ const TeacherDashboard = () => {
     setIsEditing(true);
   };
 
+  const handleAdjustClick = (exam) => {
+    clearAllErrors();
+    setSelectedExam(exam);
+    setIsAdjusting(true);
+  };
+
   // Prepares editor for creating a new exam
   const handleCreateClick = () => {
     clearAllErrors();
@@ -219,12 +227,14 @@ const TeacherDashboard = () => {
       setExams((prev) => prev.map((e) => (e.id === savedExam.id ? savedExam : e)));
     }
     setIsEditing(false);
+    setIsAdjusting(false);
     setSelectedExam(null);
     clearAllErrors();
   };
 
   const onCancel = () => {
     setIsEditing(false);
+    setIsAdjusting(false);
     setSelectedExam(null);
     clearAllErrors();
   };
@@ -498,6 +508,7 @@ const TeacherDashboard = () => {
             box-shadow: 0 4px 10px rgba(244, 63, 94, 0.15);
         }
 
+
         .alert-modern-error {
             background: rgba(244, 63, 94, 0.07);
             border: 1px solid rgba(244, 63, 94, 0.15);
@@ -542,6 +553,7 @@ const TeacherDashboard = () => {
             transform: translateY(-1px);
             box-shadow: 0 6px 16px var(--theme-glow);
             color: white;
+            font-weight: 600;
         }
         .btn-save-exam:disabled {
             opacity: 0.6;
@@ -763,6 +775,7 @@ const TeacherDashboard = () => {
                 onClick={() => {
                   setIsCreatingCourse(true);
                   setIsEditing(false);
+                  setIsAdjusting(false);
                   setViewingScoresExamId(null);
                   setGradingSubmissionId(null);
                 }}
@@ -816,6 +829,7 @@ const TeacherDashboard = () => {
                       setSelectedCourseId(c.id);
                       setIsCreatingCourse(false);
                       setIsEditing(false);
+                      setIsAdjusting(false);
                       setViewingScoresExamId(null);
                       setGradingSubmissionId(null);
                     }}
@@ -842,6 +856,21 @@ const TeacherDashboard = () => {
             <GradeSubmissionViewer
               submissionId={gradingSubmissionId}
               onBack={() => setGradingSubmissionId(null)}
+            />
+          ) : isAdjusting ? (
+            <ExamAdjustment
+              exam={selectedExam}
+              onSaveSuccess={() => {
+                setIsAdjusting(false);
+                setSelectedExam(null);
+                clearAllErrors();
+                loadDashboardData();
+              }}
+              onCancel={() => {
+                setIsAdjusting(false);
+                setSelectedExam(null);
+                clearAllErrors();
+              }}
             />
           ) : isEditing ? (
             <ExamEditor
@@ -1055,14 +1084,23 @@ const TeacherDashboard = () => {
                                 >
                                   View Scores
                                 </button>
-                                <button
-                                  className="btn btn-sm btn-action-blue py-1.5 px-3 rounded-3 dashboard-action-btn"
-                                  onClick={() => handleEditClick(exam)}
-                                  disabled={status === 'Published' || status === 'Done'}
-                                  title={status === 'Published' || status === 'Done' ? 'Cannot edit published or completed exams' : 'Edit exam'}
-                                >
-                                  Edit
-                                </button>
+                                {(status === 'Published' || status === 'Done') ? (
+                                  <button
+                                    className="btn btn-sm btn-action-blue py-1.5 px-3 rounded-3 dashboard-action-btn"
+                                    onClick={() => handleAdjustClick(exam)}
+                                    title="Adjust settings (title, duration, end date, pass grade, factor)"
+                                  >
+                                    Adjust Settings
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="btn btn-sm btn-action-blue py-1.5 px-3 rounded-3 dashboard-action-btn"
+                                    onClick={() => handleEditClick(exam)}
+                                    title="Edit exam questions and structure"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
                                 <button
                                   className="btn btn-sm btn-action-rose py-1.5 px-3 rounded-3 dashboard-action-btn"
                                   onClick={() => handleDeleteClick(exam.id)}

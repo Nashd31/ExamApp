@@ -68,6 +68,7 @@ const getAllExams = async (req, res, next) => {
         startDate: e.start_date,
         endDate: e.end_date,
         areGradesPublished: e.are_grades_published,
+        factor: e.factor,
         duration: e.duration,
         passGrade: e.pass_grade,
         creatorId: e.creator_id,
@@ -138,6 +139,7 @@ const getExamById = async (req, res, next) => {
       startDate: e.start_date,
       endDate: e.end_date,
       areGradesPublished: e.are_grades_published,
+      factor: e.factor,
       duration: e.duration,
       passGrade: e.pass_grade,
       creatorId: e.creator_id,
@@ -163,7 +165,7 @@ const createExam = async (req, res, next) => {
     const examResult = await client.query(`
       INSERT INTO exams (title, course_id, duration, pass_grade, start_date, end_date, are_grades_published, creator_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, title, course_id, duration, pass_grade, start_date, end_date, are_grades_published, creator_id
+      RETURNING id, title, course_id, duration, pass_grade, start_date, end_date, are_grades_published, factor, creator_id
     `, [title, courseId, duration || 60, passGrade || 50, startDate, endDate, areGradesPublished || false, creatorId]);
 
     const newExam = examResult.rows[0];
@@ -218,6 +220,7 @@ const createExam = async (req, res, next) => {
       startDate: newExam.start_date,
       endDate: newExam.end_date,
       areGradesPublished: newExam.are_grades_published,
+      factor: newExam.factor,
       creatorId: newExam.creator_id,
       questions: newQuestions
     });
@@ -236,24 +239,42 @@ const updateExam = async (req, res, next) => {
   const { id } = req.params;
   const { title, courseId, duration, passGrade, startDate, endDate, areGradesPublished, questions } = req.body;
 
+  try {
+    // 1. Confirm exam exists
+    const examCheck = await db.query('SELECT * FROM exams WHERE id = $1', [id]);
+    if (examCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Exam not found.' });
+    }
+    const exam = examCheck.rows[0];
+
+    // 2. Check if the exam has submissions or has already started
+    const subCheck = await db.query('SELECT COUNT(*) FROM submissions WHERE exam_id = $1', [id]);
+    const hasSubmissions = parseInt(subCheck.rows[0].count, 10) > 0;
+
+    const currentTime = new Date();
+    const start = new Date(exam.start_date);
+    const isStarted = currentTime >= start;
+
+    if (hasSubmissions || isStarted) {
+      return res.status(400).json({
+        error: 'Cannot edit exam structure or questions once it has started or has submissions. Use the Adjust Settings option instead.'
+      });
+    }
+  } catch (err) {
+    return next(err);
+  }
+
   const client = await db.pool.connect();
 
   try {
     await client.query('BEGIN');
-
-    // Confirm exam exists
-    const examCheck = await client.query('SELECT * FROM exams WHERE id = $1', [id]);
-    if (examCheck.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Exam not found.' });
-    }
 
     // Update metadata
     const examResult = await client.query(`
       UPDATE exams
       SET title = $1, course_id = $2, duration = $3, pass_grade = $4, start_date = $5, end_date = $6, are_grades_published = $7
       WHERE id = $8
-      RETURNING id, title, course_id, duration, pass_grade, start_date, end_date, are_grades_published, creator_id
+      RETURNING id, title, course_id, duration, pass_grade, start_date, end_date, are_grades_published, factor, creator_id
     `, [title, courseId, duration, passGrade, startDate, endDate, areGradesPublished, id]);
 
     const updatedExam = examResult.rows[0];
@@ -313,6 +334,7 @@ const updateExam = async (req, res, next) => {
       startDate: updatedExam.start_date,
       endDate: updatedExam.end_date,
       areGradesPublished: updatedExam.are_grades_published,
+      factor: updatedExam.factor,
       creatorId: updatedExam.creator_id,
       questions: newQuestions
     });
@@ -321,6 +343,66 @@ const updateExam = async (req, res, next) => {
     next(err);
   } finally {
     client.release();
+  }
+};
+
+/**
+ * Adjusts specific settings of an exam (title, duration, endDate, passGrade, factor)
+ * without touching questions/options. Safe to run for active or completed exams.
+ */
+const adjustExam = async (req, res, next) => {
+  const { id } = req.params;
+  const { title, duration, endDate, passGrade, factor } = req.body;
+
+  try {
+    // Confirm exam exists
+    const examCheck = await db.query('SELECT * FROM exams WHERE id = $1', [id]);
+    if (examCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Exam not found.' });
+    }
+    const originalExam = examCheck.rows[0];
+
+    const newTitle = title !== undefined ? title : originalExam.title;
+    const newDuration = duration !== undefined ? Number(duration) : originalExam.duration;
+    const newEndDate = endDate !== undefined ? endDate : originalExam.end_date;
+    const newPassGrade = passGrade !== undefined ? Number(passGrade) : originalExam.pass_grade;
+    const newFactor = factor !== undefined ? Number(factor) : originalExam.factor;
+
+    // Validate dates if end date is updated
+    if (endDate !== undefined) {
+      const start = new Date(originalExam.start_date);
+      const end = new Date(newEndDate);
+      if (isNaN(end.getTime())) {
+        return res.status(400).json({ error: 'Invalid end date.' });
+      }
+      if (end <= start) {
+        return res.status(400).json({ error: 'End date must be strictly after start date.' });
+      }
+    }
+
+    const result = await db.query(`
+      UPDATE exams
+      SET title = $1, duration = $2, end_date = $3, pass_grade = $4, factor = $5
+      WHERE id = $6
+      RETURNING id, title, course_id, duration, pass_grade, start_date, end_date, are_grades_published, factor, creator_id
+    `, [newTitle, newDuration, newEndDate, newPassGrade, newFactor, id]);
+
+    const updated = result.rows[0];
+
+    res.status(200).json({
+      id: updated.id,
+      title: updated.title,
+      courseId: updated.course_id,
+      duration: updated.duration,
+      passGrade: updated.pass_grade,
+      startDate: updated.start_date,
+      endDate: updated.end_date,
+      areGradesPublished: updated.are_grades_published,
+      factor: updated.factor,
+      creatorId: updated.creator_id
+    });
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -346,5 +428,6 @@ module.exports = {
   getExamById,
   createExam,
   updateExam,
+  adjustExam,
   deleteExam
 };

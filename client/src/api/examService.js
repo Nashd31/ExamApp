@@ -126,6 +126,16 @@ export const unenrollStudentFromCourse = (studentId, courseId) => {
 };
 
 /**
+ * Adjusts exam settings (title, duration, endDate, passGrade, factor).
+ */
+export const adjustExam = (examId, adjustments) => {
+  return apiFetch(`/exams/${examId}/adjust`, {
+    method: 'PATCH',
+    body: adjustments
+  });
+};
+
+/**
  * Deletes a course.
  */
 export const deleteCourse = (courseId) => {
