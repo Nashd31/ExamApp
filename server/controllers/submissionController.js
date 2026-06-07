@@ -384,13 +384,10 @@ const updateManualGrade = async (req, res, next) => {
 };
 
 module.exports = {
-  createSubmission: submitExam,
   submitExam,
-  getStudentSubmissions: getMySubmissions,
   getMySubmissions,
   getExamSubmissions,
   getStudentExamSubmission,
   getSubmissionById,
-  gradeSubmission: updateManualGrade,
   updateManualGrade
 };

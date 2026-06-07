@@ -17,16 +17,10 @@ const logInfo = (message, data = null) => {
 };
 
 
-// Logs a warning message to the console.
-const logWarn = (message, data = null) => {
-    const timestamp = formatTimestamp();
-    console.warn(`[${timestamp}] ⚠️  WARN:`, message, data || '');
-};
-
 // Logs an error message to the console.
 const logError = (message, data = null) => {
     const timestamp = formatTimestamp();
     console.error(`[${timestamp}] ❌ ERROR:`, message, data || '');
 };
 
-export { logInfo, logWarn, logError };
+export { logInfo, logError };
