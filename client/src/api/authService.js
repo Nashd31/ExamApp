@@ -42,9 +42,12 @@ export const register = async (name, email, password, role) => {
  * Returns the updated user object.
  */
 export const updateUserProfile = async (userId, name, password, avatar, themeColor) => {
+  const body = { name, avatar, themeColor };
+  if (password) body.password = password;
+
   const user = await apiFetch(`/auth/profile/${userId}`, {
     method: 'PUT',
-    body: { name, password, avatar, themeColor }
+    body
   });
 
   return user;
