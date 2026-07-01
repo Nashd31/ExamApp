@@ -5,7 +5,8 @@ require('dotenv/config');
 // while allowing non-SSL connections for local development on localhost
 const isProductionOrRemote = process.env.DATABASE_URL && 
   !process.env.DATABASE_URL.includes('localhost') && 
-  !process.env.DATABASE_URL.includes('127.0.0.1');
+  !process.env.DATABASE_URL.includes('127.0.0.1') &&
+  !process.env.DATABASE_URL.includes('@db');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
