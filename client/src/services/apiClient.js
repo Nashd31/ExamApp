@@ -66,3 +66,11 @@ export const apiFetch = async (endpoint, options = {}) => {
 
   return res.json();
 };
+
+
+export const generateExamFromAI = async (promptText) => {
+  return await apiFetch('/ai/generate-exam', {
+    method: 'POST',
+    body: { promptText }
+  });
+};
