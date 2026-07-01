@@ -31,10 +31,12 @@ const Auth = () => {
     // Form inputs state
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
+    const [showLoginPassword, setShowLoginPassword] = useState(false);
 
     const [regName, setRegName] = useState('');
     const [regEmail, setRegEmail] = useState('');
     const [regPassword, setRegPassword] = useState('');
+    const [showRegPassword, setShowRegPassword] = useState(false);
     const [regRole, setRegRole] = useState('student');
 
     /**
@@ -63,6 +65,28 @@ const Auth = () => {
     const handleRegisterSubmit = async (event) => {
         event.preventDefault();
         setError('');
+
+        if (!regName || !regName.trim()) {
+            setError('Name is required and cannot be empty.');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regEmail || !emailRegex.test(regEmail)) {
+            setError('Invalid email address format.');
+            return;
+        }
+
+        if (!regPassword || regPassword.length < 6) {
+            setError('Password must be at least 6 characters long.');
+            return;
+        }
+
+        if (regRole !== 'student' && regRole !== 'teacher') {
+            setError('Please select a valid role.');
+            return;
+        }
+
         setLoading(true);
         try {
             const user = await register(regName, regEmail, regPassword, regRole);
@@ -167,13 +191,32 @@ const Auth = () => {
                 .input-icon-wrapper {
                     position: relative;
                 }
-                .input-icon-wrapper svg {
+                .input-icon-wrapper > svg {
                     position: absolute;
                     left: 12px;
                     top: 50%;
                     transform: translateY(-50%);
                     color: #94a3b8;
                     transition: color 0.3s ease;
+                }
+                .password-toggle-btn {
+                    position: absolute;
+                    right: 12px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    padding: 0;
+                    color: #94a3b8;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: color 0.2s ease;
+                    z-index: 10;
+                }
+                .password-toggle-btn:hover {
+                    color: #475569;
                 }
                 .input-icon-wrapper .form-control {
                     padding-left: 36px;
@@ -403,7 +446,7 @@ const Auth = () => {
                     }
                     .auth-panel {
                         width: 100%;
-                        padding: 28px 24px;
+                        padding: 35px 24px;
                     }
                     .overlay-container {
                         display: none !important;
@@ -416,6 +459,14 @@ const Auth = () => {
                     }
                     .mobile-toggle-text {
                         display: block !important;
+                    }
+                    .auth-submit-wrapper {
+                        padding-bottom: 0 !important;
+                        margin-top: 12px;
+                    }
+                    .auth-error-alert {
+                        position: static !important;
+                        margin-top: 10px;
                     }
                 }
 
@@ -505,18 +556,37 @@ const Auth = () => {
                             </label>
                             <div className="input-icon-wrapper">
                                 <input
-                                    type="password"
+                                    type={showRegPassword ? "text" : "password"}
                                     id="reg-password"
                                     className="form-control"
                                     placeholder="••••••••"
                                     value={regPassword}
                                     onChange={(e) => setRegPassword(e.target.value)}
                                     required
+                                    style={{ paddingRight: '40px' }}
                                 />
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                 </svg>
+                                <button
+                                    type="button"
+                                    className="password-toggle-btn"
+                                    onClick={() => setShowRegPassword(!showRegPassword)}
+                                    aria-label={showRegPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showRegPassword ? (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                            <line x1="1" y1="1" x2="23" y2="23" />
+                                        </svg>
+                                    ) : (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                    )}
+                                </button>
                             </div>
                         </div>
 
@@ -617,18 +687,37 @@ const Auth = () => {
                             </label>
                             <div className="input-icon-wrapper">
                                 <input
-                                    type="password"
+                                    type={showLoginPassword ? "text" : "password"}
                                     id="login-password"
                                     className="form-control"
                                     placeholder="••••••••"
                                     value={loginPassword}
                                     onChange={(e) => setLoginPassword(e.target.value)}
                                     required
+                                    style={{ paddingRight: '40px' }}
                                 />
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                                 </svg>
+                                <button
+                                    type="button"
+                                    className="password-toggle-btn"
+                                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                                    aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                                >
+                                    {showLoginPassword ? (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                            <line x1="1" y1="1" x2="23" y2="23" />
+                                        </svg>
+                                    ) : (
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                            <circle cx="12" cy="12" r="3" />
+                                        </svg>
+                                    )}
+                                </button>
                             </div>
                         </div>
 

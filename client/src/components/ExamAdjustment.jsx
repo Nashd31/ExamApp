@@ -38,6 +38,14 @@ const ExamAdjustment = ({ exam, onSaveSuccess, onCancel }) => {
       setError('End date must be strictly after the start date.');
       return;
     }
+    if (!duration || isNaN(Number(duration)) || Number(duration) <= 0) {
+      setError('Duration must be a positive number greater than 0.');
+      return;
+    }
+    if (passGrade === undefined || passGrade === '' || isNaN(Number(passGrade)) || Number(passGrade) <= 0 || Number(passGrade) > 100) {
+      setError('Pass grade must be between 1 and 100.');
+      return;
+    }
 
     try {
       setLoading(true);

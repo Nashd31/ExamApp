@@ -9,8 +9,21 @@ const db = require('../config/db');
 const register = async (req, res, next) => {
   const { name, email, password, role } = req.body;
 
-  if (!name || !email || !password || !role) {
-    return res.status(400).json({ error: 'All fields (name, email, password, role) are required.' });
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Name is required and cannot be empty.' });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email address format.' });
+  }
+
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+  }
+
+  if (role !== 'student' && role !== 'teacher') {
+    return res.status(400).json({ error: 'Role must be either \'student\' or \'teacher\'.' });
   }
 
   try {
@@ -126,9 +139,22 @@ const updateProfile = async (req, res, next) => {
   const { id } = req.params;
   const { name, password, avatar, themeColor } = req.body;
 
+  const profileId = parseInt(id, 10);
+  if (isNaN(profileId)) {
+    return res.status(400).json({ error: 'Invalid user ID.' });
+  }
+
   // Authorization check: Make sure req.user.id matches params.id or role is admin/teacher
-  if (req.user.id !== parseInt(id, 10)) {
+  if (req.user.id !== profileId) {
     return res.status(403).json({ error: 'Unauthorized profile update.' });
+  }
+
+  if (name !== undefined && !name.trim()) {
+    return res.status(400).json({ error: 'Name cannot be empty.' });
+  }
+
+  if (password !== undefined && password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
   }
 
   try {
@@ -140,14 +166,14 @@ const updateProfile = async (req, res, next) => {
         SET name = $1, password_hash = $2, avatar = $3, theme_color = $4 
         WHERE id = $5 
         RETURNING id, email, name, role, avatar, theme_color
-      `, [name, passwordHash, avatar, themeColor, id]);
+      `, [name, passwordHash, avatar, themeColor, profileId]);
     } else {
       result = await db.query(`
         UPDATE users 
         SET name = $1, avatar = $2, theme_color = $3 
         WHERE id = $4 
         RETURNING id, email, name, role, avatar, theme_color
-      `, [name, avatar, themeColor, id]);
+      `, [name, avatar, themeColor, profileId]);
     }
 
     if (result.rows.length === 0) {

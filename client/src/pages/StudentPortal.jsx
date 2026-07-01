@@ -60,7 +60,12 @@ const StudentPortal = () => {
         const message = 'This exam is not available yet.';
         setSearchError(message);
       } else if (status === 'Published') {
-        setExam(data);
+        const alreadySubmitted = pastExams.some(sub => Number(sub.examId) === Number(data.id));
+        if (alreadySubmitted) {
+          setSearchError('You have already submitted answers for this exam.');
+        } else {
+          setExam(data);
+        }
       } else {
         const message = 'This exam is not available.';
         setSearchError(message);
