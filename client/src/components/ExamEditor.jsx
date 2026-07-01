@@ -207,6 +207,16 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
       return;
     }
 
+    if (!editingExam.duration || isNaN(Number(editingExam.duration)) || Number(editingExam.duration) <= 0) {
+      setError('Duration must be a positive number greater than 0.');
+      return;
+    }
+
+    if (editingExam.passGrade === undefined || editingExam.passGrade === '' || isNaN(Number(editingExam.passGrade)) || Number(editingExam.passGrade) <= 0 || Number(editingExam.passGrade) > 100) {
+      setError('Pass grade must be between 1 and 100.');
+      return;
+    }
+
     // Start time cannot be in the past (with a 1-minute grace buffer for completion lag)
     if (start.getTime() < now.getTime() - 60000) {
       setError('Start time cannot be before the current time.');

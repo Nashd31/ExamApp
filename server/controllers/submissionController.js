@@ -8,8 +8,13 @@ const submitExam = async (req, res, next) => {
   const { examId, answers } = req.body;
   const studentId = req.user ? req.user.id : req.body.studentId;
 
-  if (!examId || !answers) {
-    return res.status(400).json({ error: 'examId and answers are required.' });
+  const eId = parseInt(examId, 10);
+  if (isNaN(eId)) {
+    return res.status(400).json({ error: 'Invalid exam ID.' });
+  }
+
+  if (!answers || typeof answers !== 'object') {
+    return res.status(400).json({ error: 'Answers must be a valid object.' });
   }
 
   const client = await db.pool.connect();
@@ -18,14 +23,14 @@ const submitExam = async (req, res, next) => {
     await client.query('BEGIN');
 
     // 1. Fetch exam details and questions
-    const examResult = await client.query('SELECT * FROM exams WHERE id = $1', [examId]);
+    const examResult = await client.query('SELECT * FROM exams WHERE id = $1', [eId]);
     if (examResult.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Exam not found.' });
     }
     const exam = examResult.rows[0];
 
-    const questionsResult = await client.query('SELECT * FROM questions WHERE exam_id = $1', [examId]);
+    const questionsResult = await client.query('SELECT * FROM questions WHERE exam_id = $1', [eId]);
     const questions = questionsResult.rows;
 
     // 2. Resolve student user ID
@@ -43,6 +48,16 @@ const submitExam = async (req, res, next) => {
     if (!resolvedStudentId) {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: 'studentId could not be determined.' });
+    }
+
+    // Check if the student has already submitted for this exam
+    const submissionCheck = await client.query(
+      'SELECT * FROM submissions WHERE exam_id = $1 AND student_id = $2',
+      [eId, resolvedStudentId]
+    );
+    if (submissionCheck.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'You have already submitted answers for this exam.' });
     }
 
     // 3. Ensure student is enrolled in the exam's course
@@ -86,7 +101,7 @@ const submitExam = async (req, res, next) => {
       INSERT INTO submissions (exam_id, student_id, score, status, submitted_at)
       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
       RETURNING id, score, submitted_at
-    `, [examId, resolvedStudentId, finalScore, 'submitted']);
+    `, [eId, resolvedStudentId, finalScore, 'submitted']);
 
     const newSubId = submissionResult.rows[0].id;
 
@@ -215,6 +230,10 @@ const getMySubmissions = async (req, res, next) => {
  */
 const getExamSubmissions = async (req, res, next) => {
   const { examId } = req.params;
+  const eId = parseInt(examId, 10);
+  if (isNaN(eId)) {
+    return res.status(400).json({ error: 'Invalid exam ID.' });
+  }
 
   try {
     const result = await db.query(`
@@ -224,7 +243,7 @@ const getExamSubmissions = async (req, res, next) => {
       JOIN exams e ON s.exam_id = e.id
       WHERE s.exam_id = $1
       ORDER BY s.submitted_at DESC
-    `, [examId]);
+    `, [eId]);
 
     const formatted = [];
     for (const row of result.rows) {
@@ -242,12 +261,20 @@ const getExamSubmissions = async (req, res, next) => {
  */
 const getStudentExamSubmission = async (req, res, next) => {
   const { examId, studentName } = req.params;
+  const eId = parseInt(examId, 10);
+  if (isNaN(eId)) {
+    return res.status(400).json({ error: 'Invalid exam ID.' });
+  }
+
+  if (!studentName || !studentName.trim()) {
+    return res.status(400).json({ error: 'Student name is required.' });
+  }
 
   try {
     // Resolve student ID
     const studentCheck = await db.query(
       "SELECT id FROM users WHERE name = $1 AND role = 'student'",
-      [studentName]
+      [studentName.trim()]
     );
     if (studentCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Student not found.' });
@@ -260,7 +287,7 @@ const getStudentExamSubmission = async (req, res, next) => {
       JOIN users u ON s.student_id = u.id
       JOIN exams e ON s.exam_id = e.id
       WHERE s.exam_id = $1 AND s.student_id = $2
-    `, [examId, studentId]);
+    `, [eId, studentId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Submission not found.' });
@@ -278,6 +305,10 @@ const getStudentExamSubmission = async (req, res, next) => {
  */
 const getSubmissionById = async (req, res, next) => {
   const { id } = req.params;
+  const submissionId = parseInt(id, 10);
+  if (isNaN(submissionId)) {
+    return res.status(400).json({ error: 'Invalid submission ID.' });
+  }
 
   try {
     const result = await db.query(`
@@ -286,7 +317,7 @@ const getSubmissionById = async (req, res, next) => {
       JOIN users u ON s.student_id = u.id
       JOIN exams e ON s.exam_id = e.id
       WHERE s.id = $1
-    `, [id]);
+    `, [submissionId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Submission not found.' });
@@ -306,13 +337,20 @@ const updateManualGrade = async (req, res, next) => {
   const { id } = req.params;
   const { questionId, points, notes } = req.body;
 
+  const submissionId = parseInt(id, 10);
+  const qId = parseInt(questionId, 10);
+
+  if (isNaN(submissionId) || isNaN(qId)) {
+    return res.status(400).json({ error: 'Invalid submission ID or question ID.' });
+  }
+
   const client = await db.pool.connect();
 
   try {
     await client.query('BEGIN');
 
     // 1. Check if submission exists
-    const subCheck = await client.query('SELECT * FROM submissions WHERE id = $1', [id]);
+    const subCheck = await client.query('SELECT * FROM submissions WHERE id = $1', [submissionId]);
     if (subCheck.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Submission not found.' });
@@ -320,17 +358,25 @@ const updateManualGrade = async (req, res, next) => {
     const sub = subCheck.rows[0];
 
     // 2. Update the answer points and notes
-    await client.query(`
+    const updateRes = await client.query(`
       UPDATE answers 
       SET manual_points = $1, notes = $2 
       WHERE submission_id = $3 AND question_id = $4
-    `, [Number(points), notes || '', id, questionId]);
+    `, [Number(points), notes || '', submissionId, qId]);
+
+    if (updateRes.rowCount === 0) {
+      // If no answer record exists for this question, insert a new one
+      await client.query(`
+        INSERT INTO answers (submission_id, question_id, manual_points, notes)
+        VALUES ($1, $2, $3, $4)
+      `, [submissionId, qId, Number(points), notes || '']);
+    }
 
     // 3. Retrieve all questions and student answers to recalculate the score
     const questionsResult = await client.query('SELECT * FROM questions WHERE exam_id = $1', [sub.exam_id]);
     const questions = questionsResult.rows;
 
-    const answersResult = await client.query('SELECT * FROM answers WHERE submission_id = $1', [id]);
+    const answersResult = await client.query('SELECT * FROM answers WHERE submission_id = $1', [submissionId]);
     const answers = answersResult.rows;
 
     // Create lookups
@@ -368,7 +414,7 @@ const updateManualGrade = async (req, res, next) => {
     // (A standard approach is status 'graded' since a teacher manually evaluated it)
     await client.query(
       'UPDATE submissions SET score = $1, status = $2 WHERE id = $3',
-      [finalScore, 'graded', id]
+      [finalScore, 'graded', submissionId]
     );
 
     await client.query('COMMIT');
@@ -380,7 +426,7 @@ const updateManualGrade = async (req, res, next) => {
       JOIN users u ON s.student_id = u.id
       JOIN exams e ON s.exam_id = e.id
       WHERE s.id = $1
-    `, [id]);
+    `, [submissionId]);
     
     const formatted = await formatSubmission(updatedSubResult.rows[0]);
     res.status(200).json(formatted);
@@ -391,6 +437,8 @@ const updateManualGrade = async (req, res, next) => {
     client.release();
   }
 };
+
+
 
 module.exports = {
   submitExam,

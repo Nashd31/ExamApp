@@ -1,10 +1,11 @@
 import { apiFetch } from '../services/apiClient';
 
 /**
- * Retrieves all exams from the server.
+ * Retrieves exams from the server. If teacherId is provided, fetches only that teacher's exams.
  */
-export const getAllExams = () => {
-  return apiFetch('/exams');
+export const getAllExams = (teacherId) => {
+  const url = teacherId ? `/exams?teacherId=${teacherId}` : '/exams';
+  return apiFetch(url);
 };
 
 /**

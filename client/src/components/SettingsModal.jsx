@@ -59,6 +59,10 @@ const SettingsModal = ({ isOpen, onClose }) => {
       showError('Name cannot be empty.');
       return;
     }
+    if (password && password.length < 6) {
+      showError('Password must be at least 6 characters long.');
+      return;
+    }
     setLoading(true);
     try {
       await updateProfile(name.trim(), password || null, avatar, themeColor);
