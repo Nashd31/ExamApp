@@ -3,8 +3,7 @@ name: Full Stack CI/CD Pipeline
 on:
   push:
     branches: [ "main" ]
-
-# Grant the pipeline permission to push the live code to the gh-pages branch
+    
 permissions:
   contents: write 
 
@@ -37,7 +36,6 @@ jobs:
   # Phase 2: Continuous Deployment
   # -----------------------------
   cd-deploy-frontend:
-    # The 'needs' keyword is the magic link. This CD job will NOT run if the CI job fails!
     needs: ci-build-test 
     runs-on: ubuntu-latest
     steps:
