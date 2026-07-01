@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { getExamById, submitExam } from '../api/examService';
+import { getExamById, submitExam, getStudentSubmission } from '../api/examService';
 import { showSuccess, showError } from '../services/notify';
 import { useDialog } from '../hooks/useDialog';
 
@@ -35,6 +35,19 @@ const TakeExam = () => {
             setError('');
 
             try {
+                if (user?.role === 'student' && user?.name) {
+                    try {
+                        const existingSub = await getStudentSubmission(id, user.name);
+                        if (existingSub) {
+                            setError('You have already submitted answers for this exam.');
+                            setLoading(false);
+                            return;
+                        }
+                    } catch (subErr) {
+                        // 404 is expected when no submission exists yet
+                    }
+                }
+
                 const data = await getExamById(id);
                 if (data.startDate && data.endDate) {
                     const start = new Date(data.startDate);

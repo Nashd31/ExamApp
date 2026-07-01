@@ -51,7 +51,7 @@ graph TD
     subgraph Frontend [React Client - GitHub Pages / Local]
         UI[User Interface]
         AuthCtx[Auth Context]
-        APIClient[Axios Interceptor]
+        APIClient[Fetch Client]
         UI --> AuthCtx
         AuthCtx --> APIClient
     end
@@ -117,7 +117,7 @@ The relational schema is optimized with specific indexes for quick queries durin
 ### 📚 Course Operations (`/api/courses`)
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/courses` | Public | Lists all active courses in the system |
+| `GET` | `/api/courses` | Private (Auth) | Lists all active courses in the system |
 | `GET` | `/api/courses/student/:studentId` | Private (Auth) | Retrieves courses enrolled by a specific student |
 | `POST` | `/api/courses/enroll` | Private (Auth) | Enrolls a student using a unique course code |
 | `DELETE` | `/api/courses/:courseId/student/:studentId` | Private (Auth) | Unenrolls a student from a course |
@@ -154,7 +154,7 @@ ExamApp/
 ├── client/                 # Frontend React application (Vite)
 │   ├── public/             # Static public assets
 │   ├── src/
-│   │   ├── api/            # API client configurations (Axios)
+│   │   ├── api/            # API client configurations (Fetch)
 │   │   ├── components/     # Reusable layout & feature components (Navbar, Editor, etc.)
 │   │   ├── context/        # Auth and Modal Context API providers
 │   │   ├── hooks/          # Custom utility React hooks

@@ -60,7 +60,12 @@ const StudentPortal = () => {
         const message = 'This exam is not available yet.';
         setSearchError(message);
       } else if (status === 'Published') {
-        setExam(data);
+        const alreadySubmitted = pastExams.some(sub => Number(sub.examId) === Number(data.id));
+        if (alreadySubmitted) {
+          setSearchError('You have already submitted answers for this exam.');
+        } else {
+          setExam(data);
+        }
       } else {
         const message = 'This exam is not available.';
         setSearchError(message);
@@ -532,7 +537,6 @@ const StudentPortal = () => {
             border-color: var(--theme-color) !important;
             box-shadow: 0 3px 8px var(--theme-glow);
         }
-
         .alert-modern-error {
             background: rgba(244, 63, 94, 0.07);
             border: 1px solid rgba(244, 63, 94, 0.15);
@@ -544,6 +548,9 @@ const StudentPortal = () => {
             align-items: center;
             gap: 8px;
             animation: slideDown 0.4s ease-out;
+        }
+        .table-responsive {
+            scrollbar-color: var(--theme-color) rgba(148, 163, 184, 0.08);
         }
       `}</style>
 

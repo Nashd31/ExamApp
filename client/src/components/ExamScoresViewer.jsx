@@ -573,6 +573,9 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
             align-items: center;
             gap: 8px;
         }
+        .table-responsive {
+            scrollbar-color: var(--theme-color) rgba(148, 163, 184, 0.08);
+        }
       `}</style>
 
       <div className="card-header scores-header-card d-flex justify-content-between align-items-center p-4 border-0">
@@ -642,8 +645,8 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
             <p className="text-muted mb-0">No submissions found for this exam.</p>
           </div>
         ) : (
-          <div className="table-responsive border rounded-4 overflow-hidden">
-            <table className="modern-scores-table table align-middle">
+          <div className="table-responsive border rounded-4">
+            <table className="table-hover align-middle modern-scores-table table mb-0">
               <thead>
                 <tr>
                   <th>Student Name</th>
@@ -651,7 +654,7 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
                   <th>Score</th>
                   <th>Status</th>
                   <th>Review Status</th>
-                  <th style={{ textAlign: 'right' }}>Action</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -677,7 +680,7 @@ const ExamScoresViewer = ({ examId, onBack, onGrade }) => {
                         );
                       })()}
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td>
                       <button
                         className="btn-grade-review"
                         onClick={() => onGrade(sub.id)}

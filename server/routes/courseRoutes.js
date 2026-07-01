@@ -12,8 +12,8 @@ const { protectRoute, requireRole } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Public course list
-router.get('/', getAllCourses);
+// Course list protected to restrict access to authenticated users
+router.get('/', protectRoute, getAllCourses);
 
 // Student course lookup and enrollment
 router.get('/student/:studentId', protectRoute, getStudentCourses);

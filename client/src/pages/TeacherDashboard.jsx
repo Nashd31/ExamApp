@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getAllExams, deleteExam, getExamSubmissions, updateExam, getCoursesByTeacher, createCourse, deleteCourse as deleteCourseApi } from '../api/examService';
+import { getAllExams, deleteExam, updateExam, getCoursesByTeacher, createCourse, deleteCourse as deleteCourseApi } from '../api/examService';
 import { useAuth } from '../hooks/useAuth';
 import { showSuccess } from '../services/notify';
 import { useDialog } from '../hooks/useDialog';
@@ -8,6 +8,7 @@ import { getExamStatus, formatDate } from '../utils/examUtils';
 import ExamEditor from '../components/ExamEditor';
 import ExamScoresViewer from '../components/ExamScoresViewer';
 import GradeSubmissionViewer from '../components/GradeSubmissionViewer';
+import ExamAdjustment from '../components/ExamAdjustment';
 
 /**
  * TeacherDashboard Component
@@ -23,6 +24,7 @@ const TeacherDashboard = () => {
   const [loading, setLoading] = useState(() => !!user?.id);
   const [selectedExam, setSelectedExam] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAdjusting, setIsAdjusting] = useState(false);
   const [viewingScoresExamId, setViewingScoresExamId] = useState(() => location.state?.viewScoresExamId || null);
   const [gradingSubmissionId, setGradingSubmissionId] = useState(null);
   const [submissionCounts, setSubmissionCounts] = useState({});
@@ -59,7 +61,7 @@ const TeacherDashboard = () => {
     if (container) {
       container.scrollTop = 0;
     }
-  }, [isEditing, viewingScoresExamId, gradingSubmissionId, selectedCourseId, isCreatingCourse]);
+  }, [isEditing, isAdjusting, viewingScoresExamId, gradingSubmissionId, selectedCourseId, isCreatingCourse]);
 
   // Fetches courses and exams from the server and updates local state.
   // Used by event handlers (create course, delete course, toggle publish) to refresh data.
@@ -79,23 +81,13 @@ const TeacherDashboard = () => {
         return prev;
       });
 
-      const myCourseIds = myCourses.map(c => c.id);
+      // 2. Fetch only this teacher's exams (with submission counts embedded)
+      const teacherExams = await getAllExams(user.id);
+      setExams(teacherExams);
 
-      // 2. Fetch all exams and filter to show only those belonging to the teacher's courses
-      const allExams = await getAllExams();
-      const filteredExams = allExams.filter(e => myCourseIds.includes(e.courseId));
-      setExams(filteredExams);
-
-      // 3. Fetch submission counts for each exam
+      // 3. Build submission counts map from the exam data (no extra HTTP request needed)
       const counts = {};
-      for (const exam of filteredExams) {
-        try {
-          const subs = await getExamSubmissions(exam.id);
-          counts[exam.id] = subs.length;
-        } catch {
-          counts[exam.id] = 0;
-        }
-      }
+      teacherExams.forEach(e => { counts[e.id] = e.submissionCount ?? 0; });
       setSubmissionCounts(counts);
     } catch (err) {
       setConnectionError(err.message || 'Error fetching dashboard data');
@@ -118,22 +110,14 @@ const TeacherDashboard = () => {
         setCourses(myCourses);
         setSelectedCourseId(prev => (!prev && myCourses.length > 0 ? myCourses[0].id : prev));
 
-        const myCourseIds = myCourses.map(c => c.id);
-        const allExams = await getAllExams();
+        // Fetch only this teacher's exams (with submission counts embedded)
+        const teacherExams = await getAllExams(user.id);
         if (!active) return;
-        const filteredExams = allExams.filter(e => myCourseIds.includes(e.courseId));
-        setExams(filteredExams);
+        setExams(teacherExams);
 
+        // Build submission counts map from the exam data (no extra HTTP request needed)
         const counts = {};
-        for (const exam of filteredExams) {
-          try {
-            const subs = await getExamSubmissions(exam.id);
-            counts[exam.id] = subs.length;
-          } catch {
-            counts[exam.id] = 0;
-          }
-        }
-        if (!active) return;
+        teacherExams.forEach(e => { counts[e.id] = e.submissionCount ?? 0; });
         setSubmissionCounts(counts);
       } catch (err) {
         if (active) setConnectionError(err.message || 'Error fetching dashboard data');
@@ -150,6 +134,12 @@ const TeacherDashboard = () => {
     clearAllErrors();
     setSelectedExam(exam);
     setIsEditing(true);
+  };
+
+  const handleAdjustClick = (exam) => {
+    clearAllErrors();
+    setSelectedExam(exam);
+    setIsAdjusting(true);
   };
 
   // Prepares editor for creating a new exam
@@ -219,12 +209,14 @@ const TeacherDashboard = () => {
       setExams((prev) => prev.map((e) => (e.id === savedExam.id ? savedExam : e)));
     }
     setIsEditing(false);
+    setIsAdjusting(false);
     setSelectedExam(null);
     clearAllErrors();
   };
 
   const onCancel = () => {
     setIsEditing(false);
+    setIsAdjusting(false);
     setSelectedExam(null);
     clearAllErrors();
   };
@@ -411,9 +403,9 @@ const TeacherDashboard = () => {
             box-shadow: 0 0 10px rgba(217, 119, 6, 0.08);
         }
         .status-published {
-            background-color: #ecfdf5;
-            color: #059669;
-            border: 1px solid #a7f3d0;
+            background: rgba(244, 63, 94, 0.06);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            color: #e11d48;
             box-shadow: 0 0 10px rgba(5, 150, 105, 0.08);
         }
         .status-done {
@@ -421,6 +413,12 @@ const TeacherDashboard = () => {
             color: #4f46e5;
             border: 1px solid #c7d2fe;
             box-shadow: 0 0 10px rgba(79, 70, 229, 0.08);
+        }
+        .status-graded {
+            background-color: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+            box-shadow: 0 0 10px rgba(4, 120, 87, 0.08);
         }
 
         .btn-action-green {
@@ -498,6 +496,7 @@ const TeacherDashboard = () => {
             box-shadow: 0 4px 10px rgba(244, 63, 94, 0.15);
         }
 
+
         .alert-modern-error {
             background: rgba(244, 63, 94, 0.07);
             border: 1px solid rgba(244, 63, 94, 0.15);
@@ -542,6 +541,7 @@ const TeacherDashboard = () => {
             transform: translateY(-1px);
             box-shadow: 0 6px 16px var(--theme-glow);
             color: white;
+            font-weight: 600;
         }
         .btn-save-exam:disabled {
             opacity: 0.6;
@@ -763,6 +763,7 @@ const TeacherDashboard = () => {
                 onClick={() => {
                   setIsCreatingCourse(true);
                   setIsEditing(false);
+                  setIsAdjusting(false);
                   setViewingScoresExamId(null);
                   setGradingSubmissionId(null);
                 }}
@@ -816,6 +817,7 @@ const TeacherDashboard = () => {
                       setSelectedCourseId(c.id);
                       setIsCreatingCourse(false);
                       setIsEditing(false);
+                      setIsAdjusting(false);
                       setViewingScoresExamId(null);
                       setGradingSubmissionId(null);
                     }}
@@ -842,6 +844,21 @@ const TeacherDashboard = () => {
             <GradeSubmissionViewer
               submissionId={gradingSubmissionId}
               onBack={() => setGradingSubmissionId(null)}
+            />
+          ) : isAdjusting ? (
+            <ExamAdjustment
+              exam={selectedExam}
+              onSaveSuccess={() => {
+                setIsAdjusting(false);
+                setSelectedExam(null);
+                clearAllErrors();
+                loadDashboardData();
+              }}
+              onCancel={() => {
+                setIsAdjusting(false);
+                setSelectedExam(null);
+                clearAllErrors();
+              }}
             />
           ) : isEditing ? (
             <ExamEditor
@@ -1002,9 +1019,15 @@ const TeacherDashboard = () => {
                                   <h6 className="fw-bold mb-0" style={{ color: '#1e293b', fontSize: '15px' }}>
                                     {exam.title}
                                   </h6>
-                                  {status === 'Published' && <span className="status-pill status-published">Published</span>}
+                                  {status === 'Published' && <span className="status-pill status-published">Active</span>}
                                   {status === 'Scheduled' && <span className="status-pill status-scheduled">Scheduled</span>}
-                                  {status === 'Done' && <span className="status-pill status-done">Done</span>}
+                                  {status === 'Done' && (
+                                    exam.areGradesPublished ? (
+                                      <span className="status-pill status-graded">Grades Published</span>
+                                    ) : (
+                                      <span className="status-pill status-done">Done</span>
+                                    )
+                                  )}
                                   {status === 'Draft' && <span className="status-pill status-draft">Draft</span>}
                                 </div>
 
@@ -1044,8 +1067,8 @@ const TeacherDashboard = () => {
                                 <button
                                   className={`btn btn-sm py-1.5 px-3 rounded-3 dashboard-action-btn ${exam.areGradesPublished ? 'btn-action-amber' : 'btn-action-green'}`}
                                   onClick={() => handleTogglePublishGrades(exam)}
-                                  disabled={status !== 'Done' || subCount === 0}
-                                  title={status !== 'Done' ? 'Grades can only be published once the exam has finished' : subCount === 0 ? 'No student submissions yet' : exam.areGradesPublished ? 'Click to unpublish grades' : 'Click to publish grades'}
+                                  disabled={!exam.areGradesPublished && (status !== 'Done' || subCount === 0)}
+                                  title={!exam.areGradesPublished ? (status !== 'Done' ? 'Grades can only be published once the exam has finished' : subCount === 0 ? 'No student submissions yet' : 'Click to publish grades') : 'Click to unpublish grades'}
                                 >
                                   {exam.areGradesPublished ? 'Unpublish Grades' : 'Publish Grades'}
                                 </button>
@@ -1055,14 +1078,23 @@ const TeacherDashboard = () => {
                                 >
                                   View Scores
                                 </button>
-                                <button
-                                  className="btn btn-sm btn-action-blue py-1.5 px-3 rounded-3 dashboard-action-btn"
-                                  onClick={() => handleEditClick(exam)}
-                                  disabled={status === 'Published' || status === 'Done'}
-                                  title={status === 'Published' || status === 'Done' ? 'Cannot edit published or completed exams' : 'Edit exam'}
-                                >
-                                  Edit
-                                </button>
+                                {(status === 'Published' || status === 'Done') ? (
+                                  <button
+                                    className="btn btn-sm btn-action-blue py-1.5 px-3 rounded-3 dashboard-action-btn"
+                                    onClick={() => handleAdjustClick(exam)}
+                                    title="Adjust settings (title, duration, end date, pass grade, factor)"
+                                  >
+                                    Adjust Settings
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="btn btn-sm btn-action-blue py-1.5 px-3 rounded-3 dashboard-action-btn"
+                                    onClick={() => handleEditClick(exam)}
+                                    title="Edit exam questions and structure"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
                                 <button
                                   className="btn btn-sm btn-action-rose py-1.5 px-3 rounded-3 dashboard-action-btn"
                                   onClick={() => handleDeleteClick(exam.id)}

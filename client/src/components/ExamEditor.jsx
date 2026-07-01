@@ -207,6 +207,16 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
       return;
     }
 
+    if (!editingExam.duration || isNaN(Number(editingExam.duration)) || Number(editingExam.duration) <= 0) {
+      setError('Duration must be a positive number greater than 0.');
+      return;
+    }
+
+    if (editingExam.passGrade === undefined || editingExam.passGrade === '' || isNaN(Number(editingExam.passGrade)) || Number(editingExam.passGrade) <= 0 || Number(editingExam.passGrade) > 100) {
+      setError('Pass grade must be between 1 and 100.');
+      return;
+    }
+
     // Start time cannot be in the past (with a 1-minute grace buffer for completion lag)
     if (start.getTime() < now.getTime() - 60000) {
       setError('Start time cannot be before the current time.');
@@ -532,7 +542,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.02);
         }
       `}</style>
-      
+
       <div className="card-header editor-header-card d-flex justify-content-between align-items-center p-4 border-0">
         <h4 className="fw-bold mb-0">
           {editingExam.isNew ? 'Create New Exam' : 'Edit Exam'}: <span className="text-warning fw-semibold">{editingExam.title}</span>
@@ -546,7 +556,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
         {/* General Settings */}
         <div className="card border-0 shadow-sm p-4 mb-4 rounded-4" style={{ backgroundColor: 'rgba(255, 255, 255, 0.5)', border: '1px solid rgba(148, 163, 184, 0.1)' }}>
           <h5 className="fw-bold mb-3" style={{ color: '#1e293b', fontSize: '16px' }}>General Settings</h5>
-          
+
           <div className="mb-4">
             <label className="form-label small fw-semibold text-secondary mb-1.5">Exam Title</label>
             <input
@@ -572,8 +582,8 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             ) : (
               (() => {
                 const selectedCourse = courses.find(c => c.id === editingExam.courseId);
-                const triggerLabel = selectedCourse 
-                  ? `${selectedCourse.name} (${selectedCourse.code})` 
+                const triggerLabel = selectedCourse
+                  ? `${selectedCourse.name} (${selectedCourse.code})`
                   : '-- Select Course --';
 
                 return (
@@ -657,7 +667,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
         {(() => {
           let progressColorClass;
           let pointsMessage;
-          
+
           if (totalPoints === 100) {
             progressColorClass = 'bg-progress-success';
             pointsMessage = 'Total points: 100% ✓ Perfect!';
@@ -790,11 +800,11 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
                         Allow multiple correct answers
                       </label>
                     </div>
-                    
+
                     <label className="form-label small text-secondary fw-semibold mb-2">
                       Options (Select the correct {q.allowMultipleAnswers ? 'answers' : 'answer'}):
                     </label>
-                    
+
                     {q.options?.map((opt, oIndex) => (
                       <div key={oIndex} className="d-flex option-input-group mb-2">
                         <div className="option-group-text">
@@ -833,7 +843,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
                         </button>
                       </div>
                     ))}
-                    
+
                     <button className="btn btn-add-option" onClick={() => handleAddOption(qIndex)}>
                       + Add Option
                     </button>
@@ -855,7 +865,7 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
         {error && (
           <div className="modern-alert mb-4">
             <span className="d-flex align-items-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
               {error}
             </span>
             <button type="button" className="btn-close" style={{ fontSize: '10px' }} onClick={() => setError('')} aria-label="Close"></button>
@@ -863,22 +873,24 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
         )}
 
         {/* Action Buttons */}
-        <div className="d-flex gap-3 justify-content-end align-items-center mt-4 pt-3 border-top">
-          <button className="btn btn-add-question py-2 px-4 rounded-3 btn-sm" disabled={loading} onClick={handleAddQuestion}>
-            + Add New Question
-          </button>
-          <button
-            className="btn btn-save-exam py-2 px-5 rounded-3 btn-sm"
-            onClick={handleSave}
-            disabled={totalPoints !== 100 || loading}
-          >
-            {loading ? (editingExam?.isNew ? 'Creating...' : 'Saving...') : (editingExam?.isNew ? 'Create Exam' : 'Save Changes')}
-          </button>
-          <button className="btn btn-cancel-exam py-2 px-4 rounded-3 btn-sm" disabled={loading} onClick={onCancel}>
-            Cancel
-          </button>
-        </div>
 
+        <div className="d-flex gap-3 justify-content-end align-items-center mt-4 pt-3 border-top">
+          <div className="d-flex gap-3 justify-content-md-end justify-content-center flex-wrap">
+            <button className="btn btn-add-question py-2 px-4 rounded-3 btn-sm" disabled={loading} onClick={handleAddQuestion}>
+              + Add New Question
+            </button>
+            <button
+              className="btn btn-save-exam py-2 px-5 rounded-3 btn-sm"
+              onClick={handleSave}
+              disabled={totalPoints !== 100 || loading}
+            >
+              {loading ? (editingExam?.isNew ? 'Creating...' : 'Saving...') : (editingExam?.isNew ? 'Create Exam' : 'Save Changes')}
+            </button>
+            <button className="btn btn-cancel-exam py-2 px-4 rounded-3 btn-sm" disabled={loading} onClick={onCancel}>
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
