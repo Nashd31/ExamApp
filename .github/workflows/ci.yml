@@ -1,0 +1,62 @@
+name: Full Stack CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+# Grant the pipeline permission to push the live code to the gh-pages branch
+permissions:
+  contents: write 
+
+jobs:
+  # -----------------------------
+  # Phase 1: Continuous Integration
+  # -----------------------------
+  ci-build-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Test Frontend Build
+      working-directory: ./client
+      run: |
+        npm install
+        npm run build
+
+    - name: Test Backend Integrity
+      working-directory: ./server
+      run: npm install
+
+  # -----------------------------
+  # Phase 2: Continuous Deployment
+  # -----------------------------
+  cd-deploy-frontend:
+    # The 'needs' keyword is the magic link. This CD job will NOT run if the CI job fails!
+    needs: ci-build-test 
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Compile Production Build
+      working-directory: ./client
+      run: |
+        npm install
+        npm run build
+
+    - name: Push to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./client/dist
