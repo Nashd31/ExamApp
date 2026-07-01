@@ -73,11 +73,13 @@ graph TD
         CourseCtrl[Course Controller]
         ExamCtrl[Exam Controller]
         SubCtrl[Submission Controller]
+        AICtrl[AI Controller]
         
         Router --> AuthCtrl
         Router --> CourseCtrl
         Router --> ExamCtrl
         Router --> SubCtrl
+        Router --> AICtrl
     end
 
     %% Database
@@ -85,10 +87,17 @@ graph TD
         DB[(PostgreSQL Database)]
     end
 
+    %% External Services
+    subgraph External [External Services]
+        Gemini[Gemini AI API]
+    end
+
     AuthCtrl --> DB
     CourseCtrl --> DB
     ExamCtrl --> DB
     SubCtrl --> DB
+    
+    AICtrl -- "HTTPS / API Key" --> Gemini
 ```
 
 ---
@@ -191,27 +200,3 @@ ExamApp/
     ├── server.js           # Server application bootstrapper
     └── package.json
 ```
-
----
-
-## 🐳 Local Simulation with Docker
-
-To simulate the entire system (Database, Backend, and Frontend) locally using Docker:
-
-1. **Configure your API Key**: Create a `.env` file in the project root directory (same folder as `docker-compose.yml`) and add your API key:
-   ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
-   ```
-2. **Build and Run**:
-   ```bash
-   docker compose up --build
-   ```
-3. **Seed the Database**:
-   With the containers running, seed the PostgreSQL database by running:
-   ```bash
-   docker exec -it examapp_server npm run seed
-   ```
-4. **Access Ports**:
-   - **Frontend UI**: `http://localhost:8080`
-   - **Backend REST API**: `http://localhost:5000`
-
