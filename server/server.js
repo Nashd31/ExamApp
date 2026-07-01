@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const examRoutes = require('./routes/examRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const submissionRoutes = require('./routes/submissionRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // Import global error handlers
 const { errorHandler, notFoundHandler } = require('./middleware/errorMiddleware');
@@ -33,6 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/submissions', submissionRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Error Handling Middlewares
 app.use(notFoundHandler);
