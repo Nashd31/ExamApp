@@ -153,7 +153,7 @@ const updateProfile = async (req, res, next) => {
     return res.status(400).json({ error: 'Name cannot be empty.' });
   }
 
-  if (password !== undefined && password.length < 6) {
+  if (password != null && password.length < 6) {
     return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
   }
 
