@@ -3,8 +3,10 @@ import { createExam, updateExam, getCoursesByTeacher } from '../api/examService'
 import { showSuccess } from '../services/notify';
 import { getExamStatus } from '../utils/examUtils';
 import { useAuth } from '../hooks/useAuth';
+import { useDialog } from '../hooks/useDialog';
 import { logError } from '../services/logger';
 import CustomDateTimePicker from './CustomDateTimePicker';
+import { generateExamFromAI } from '../services/apiClient';
 
 /**
  * ExamEditor Component
@@ -13,6 +15,7 @@ import CustomDateTimePicker from './CustomDateTimePicker';
  */
 const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) => {
   const { user } = useAuth();
+  const { showConfirm } = useDialog();
   const [courses, setCourses] = useState(null);
   const [editingExam, setEditingExam] = useState(() => {
     if (exam) {
@@ -44,6 +47,13 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
   const [loading, setLoading] = useState(false);
   const [courseDropdownOpen, setCourseDropdownOpen] = useState(false);
   const [openQuestionTypeDropdownIndex, setOpenQuestionTypeDropdownIndex] = useState(null);
+
+  // AI Generator States
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [isGenerateHovered, setIsGenerateHovered] = useState(false);
+  const [isClearHovered, setIsClearHovered] = useState(false);
 
   useEffect(() => {
     const handleDocumentClick = () => {
@@ -179,6 +189,64 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
     const updatedQuestions = [...editingExam.questions];
     updatedQuestions.splice(qIndex, 1);
     setEditingExam({ ...editingExam, questions: updatedQuestions });
+  };
+
+  // Click handler for generating exam questions using Gemini AI
+  const handleGenerateExamFromAI = async () => {
+    if (!aiPrompt.trim()) return;
+    setAiLoading(true);
+    setAiError('');
+    try {
+      const generatedQuestions = await generateExamFromAI(aiPrompt);
+      if (!Array.isArray(generatedQuestions)) {
+        throw new Error("Invalid response format: expected an array of questions.");
+      }
+
+      // Format questions for client-side use
+      const mappedQuestions = generatedQuestions.map((q, index) => {
+        const type = q.type === 'open_ended' ? 'open_ended' : 'multiple_choice';
+        const options = type === 'multiple_choice' ? (q.options || ['Option 1', 'Option 2']) : undefined;
+        const correctAnswers = type === 'multiple_choice' ? (q.correctAnswers || [0]) : undefined;
+        const allowMultipleAnswers = type === 'multiple_choice' ? (correctAnswers.length > 1) : false;
+
+        return {
+          id: `q_ai_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 5)}`,
+          type,
+          text: q.text || 'Untitled Question',
+          points: Number(q.points) || 10,
+          options,
+          correctAnswers,
+          allowMultipleAnswers
+        };
+      });
+
+      setEditingExam(prev => ({
+        ...prev,
+        questions: [...prev.questions, ...mappedQuestions]
+      }));
+
+      showSuccess(`Successfully generated and appended ${mappedQuestions.length} questions!`);
+      setAiPrompt('');
+    } catch (err) {
+      logError("Failed to generate exam using AI", err.message);
+      setAiError(err.message || 'An error occurred during generation.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Click handler to clear all questions in the exam
+  const handleClearQuestions = async () => {
+    const confirmed = await showConfirm(
+      'Clear all questions?',
+      'Are you sure you want to delete all questions from this exam? This action cannot be undone.'
+    );
+    if (confirmed) {
+      setEditingExam(prev => ({
+        ...prev,
+        questions: []
+      }));
+    }
   };
 
   // Persists the currently edited exam (either creating a new one or updating an existing one).
@@ -702,6 +770,120 @@ const ExamEditor = ({ exam, exams, onSaveSuccess, onCancel, defaultCourseId }) =
             </div>
           );
         })()}
+
+        {/* AI Exam Architect section */}
+        <div className="card mb-4 border-0 shadow-sm" style={{
+          background: 'linear-gradient(135deg, rgba(207, 228, 255, 0.9) 0%, rgba(209, 229, 255, 0.9) 100%)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.6)',
+          overflow: 'hidden'
+        }}>
+          <div className="card-body p-4">
+            <div className="d-flex align-items-center gap-2 mb-2">
+              <span style={{ fontSize: '20px' }}>🤖</span>
+              <h6 className="fw-bold mb-0 text-primary-emphasis" style={{ fontSize: '15px', letterSpacing: '0.3px' }}>
+                AI Exam Generator
+              </h6>
+              <span className="badge bg-primary bg-opacity-10 border border-primary border-opacity-10 rounded-pill px-3 py-2 small ms-auto fw-semibold">
+                Powered by Gemini
+              </span>
+            </div>
+
+            <p className="text-secondary small mb-2" style={{ lineHeight: '1.5' }}>
+              Describe what kind of questions you want, their type, and how the 100 points should be distributed. The AI will design and append them automatically to this exam.
+            </p>
+
+            <div className="mb-3 position-relative">
+              <textarea
+                className="form-control modern-form-control border-0 shadow-sm"
+                rows="3"
+                style={{
+                  borderRadius: '12px',
+                  padding: '12px 16px',
+                  fontSize: '13.5px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  resize: 'none',
+                  transition: 'all 0.2s ease',
+                  border: '1px solid rgba(0, 0, 0, 0.05)'
+                }}
+                placeholder="e.g. Create a JavaScript exam with 5 multiple choice, 3 multi-select, and 2 open ended. Cover topics like scopes, hoisting, and closures, and make the points sum up to 100."
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                disabled={aiLoading}
+              />
+            </div>
+
+            {aiError && (
+              <div className="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mb-3 border-0 rounded-3 shadow-sm" style={{ fontSize: '13px', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#b91c1c' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                <span className="flex-grow-1">{aiError}</span>
+                <button type="button" className="btn-close ms-auto p-1 text-danger" style={{ fontSize: '10px', filter: 'invert(1)' }} onClick={() => setAiError('')} aria-label="Close"></button>
+              </div>
+            )}
+
+            <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <span className="text-secondary opacity-75 small" style={{ fontSize: '11.5px' }}>
+                * AI can make mistakes. Please check the generated questions carefully.
+              </span>
+              <div className="d-flex gap-2">
+                {editingExam.questions.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger d-flex align-items-center gap-2 py-2 px-3 shadow-sm"
+                    style={{
+                      borderRadius: '10px',
+                      fontSize: '13.5px',
+                      fontWeight: '600',
+                      transform: isClearHovered ? 'translateY(-1px)' : 'none',
+                      backgroundColor: isClearHovered ? '#dc3545' : 'transparent',
+                      color: isClearHovered ? '#fff' : '#dc3545',
+                      borderColor: '#dc3545',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={() => setIsClearHovered(true)}
+                    onMouseLeave={() => setIsClearHovered(false)}
+                    onClick={handleClearQuestions}
+                    disabled={aiLoading}
+                  >
+                    🗑️ Clear All Questions
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-primary d-flex align-items-center gap-2 py-2 px-4 shadow-sm border-0"
+                  style={{
+                    borderRadius: '10px',
+                    fontSize: '13.5px',
+                    fontWeight: '600',
+                    background: isGenerateHovered 
+                      ? 'linear-gradient(135deg, #4a6edb 0%, #3b5cbd 100%)' 
+                      : 'linear-gradient(135deg, #5b7cfa 0%, #4a6edb 100%)',
+                    transform: isGenerateHovered ? 'translateY(-1px)' : 'none',
+                    boxShadow: isGenerateHovered ? '0 4px 12px rgba(91, 124, 250, 0.35)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={() => setIsGenerateHovered(true)}
+                  onMouseLeave={() => setIsGenerateHovered(false)}
+                  onClick={handleGenerateExamFromAI}
+                  disabled={aiLoading || !aiPrompt.trim()}
+                >
+                  {aiLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      <span>Creating Exam Questions...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>✨ Generate Full Exam</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
 
         {/* Questions Header */}
         <div className="d-flex justify-content-between align-items-center mb-3">

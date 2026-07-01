@@ -22,6 +22,7 @@ A robust, enterprise-grade Learning Management System (LMS) built to facilitate 
 
 ### 👨‍🏫 Teacher Dashboard
 * **Course Administration:** Create new courses, generate unique enrollment codes, and manage active student registries.
+* **AI Exam Architect:** Instantly generate a complete, balanced set of exam questions (points distributed to exactly 100) using a natural language prompt (e.g., "create a JavaScript closures exam with 5 multiple choice and 3 open ended") powered by Gemini AI.
 * **Exam Composer:** Build detailed assessments containing multiple-choice questions (supporting both single and multi-select answers) or open-ended essay questions.
 * **Assessment Controls:** Configure strict time limits (duration in minutes), set minimum passing criteria, and schedule release windows.
 * **Manual & Auto Grading:** Auto-grade multiple-choice responses instantaneously. Grade open-ended answers manually with custom scores and detailed text comments.
@@ -38,6 +39,12 @@ A robust, enterprise-grade Learning Management System (LMS) built to facilitate 
 * **JWT-Based Authentication:** Clean state management and route security handled on both frontend route guards and backend middleware.
 * **Role-Based Routing:** Strict segregation between Student and Teacher privileges.
 * **Custom Profile Themes:** Personalize user experiences with custom avatar pickers and responsive UI color themes.
+
+---
+
+## 🚀 Production Highlights
+* **🤖 AI Exam Architect (Gemini AI Integration):** Empowers teachers to draft custom exam content instantaneously using raw natural language prompts (e.g., "create a CSS layouts test with 3 multiple choice and 2 essay questions"). Our backend routes these queries to Gemini, returning structured schemas with points balanced precisely to a 100-point total.
+* **🔁 Automated CI/CD Pipelines:** Outfitted with an automated GitHub Actions workflow that executes validation tests, verifies project builds, and compiles + publishes production builds to **GitHub Pages** seamlessly upon every merge or push to the `main` branch.
 
 ---
 
@@ -144,6 +151,11 @@ The relational schema is optimized with specific indexes for quick queries durin
 | `GET` | `/api/submissions/exam/:examId/student/:studentName` | Private (Auth) | Fetches a student's submission breakdown for a specific exam |
 | `GET` | `/api/submissions/:id` | Private (Auth) | Fetches a single submission breakdown with detailed grades |
 | `PUT` | `/api/submissions/:id/grade` | Private (Teacher) | Applies scores/feedback notes to student answers |
+
+### 🤖 AI Exam Generation (`/api/ai`)
+| Method | Endpoint | Access | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/ai/generate-exam` | Private (Teacher) | Generates complete exam questions from natural language prompts using Gemini AI |
 
 ---
 
