@@ -51,7 +51,7 @@ jobs:
       working-directory: ./client
       run: |
         npm install
-        npm run build --base=/ExamApp/
+        npm run build
 
     - name: Push to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
