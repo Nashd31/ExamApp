@@ -41,6 +41,10 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`Backend server successfully running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Backend server successfully running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
