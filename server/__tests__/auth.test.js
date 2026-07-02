@@ -1,10 +1,6 @@
 import request from 'supertest';
 import { expect, test, vi } from 'vitest';
 
-// Resolve 'pg' path and register a mock in Node's require cache before importing any project files.
-// This is necessary because the application uses CommonJS require() at runtime,
-// and static ESM imports are hoisted and executed before standard code, which otherwise causes
-// the real database module to load first.
 const pgPath = require.resolve('pg');
 const mockPool = {
   query: async (text, params) => {
