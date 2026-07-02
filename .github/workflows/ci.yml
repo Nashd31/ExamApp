@@ -22,15 +22,18 @@ jobs:
       with:
         node-version: '24'
 
-    - name: Test Frontend Build
+    - name: Test Frontend Build and Run Tests
       working-directory: ./client
       run: |
         npm install
         npm run build
+        npm run test
 
-    - name: Test Backend Integrity
+    - name: Test Backend Integrity and Run Tests
       working-directory: ./server
-      run: npm install
+      run: |
+        npm install
+        npm run test
 
   # -----------------------------
   # Phase 2: Continuous Deployment

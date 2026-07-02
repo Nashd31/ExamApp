@@ -127,7 +127,7 @@ const submitExam = async (req, res, next) => {
 
     // Return the final submission object
     const finalSubResult = await db.query(`
-      SELECT s.*, u.name as student_name, e.factor
+      SELECT s.*, u.name as student_name, u.avatar as student_avatar, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN exams e ON s.exam_id = e.id
@@ -178,6 +178,7 @@ const formatSubmission = async (subRow) => {
   return {
     id: subRow.id,
     studentName: subRow.student_name,
+    studentAvatar: subRow.student_avatar,
     studentId: subRow.student_id,
     examId: subRow.exam_id,
     score: adjustedScore,
@@ -237,7 +238,7 @@ const getExamSubmissions = async (req, res, next) => {
 
   try {
     const result = await db.query(`
-      SELECT s.*, u.name as student_name, e.factor
+      SELECT s.*, u.name as student_name, u.avatar as student_avatar, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN exams e ON s.exam_id = e.id
@@ -282,7 +283,7 @@ const getStudentExamSubmission = async (req, res, next) => {
     const studentId = studentCheck.rows[0].id;
 
     const result = await db.query(`
-      SELECT s.*, u.name as student_name, e.factor
+      SELECT s.*, u.name as student_name, u.avatar as student_avatar, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN exams e ON s.exam_id = e.id
@@ -312,7 +313,7 @@ const getSubmissionById = async (req, res, next) => {
 
   try {
     const result = await db.query(`
-      SELECT s.*, u.name as student_name, e.factor
+      SELECT s.*, u.name as student_name, u.avatar as student_avatar, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN exams e ON s.exam_id = e.id
@@ -421,7 +422,7 @@ const updateManualGrade = async (req, res, next) => {
 
     // 5. Return updated submission object
     const updatedSubResult = await db.query(`
-      SELECT s.*, u.name as student_name, e.factor
+      SELECT s.*, u.name as student_name, u.avatar as student_avatar, e.factor
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN exams e ON s.exam_id = e.id
