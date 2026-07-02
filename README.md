@@ -180,25 +180,29 @@ ExamApp/
 │   │   ├── context/        # Auth and Modal Context API providers
 │   │   ├── hooks/          # Custom utility React hooks
 │   │   ├── pages/          # Full-page application views (Dashboard, TakeExam, etc.)
-│   │   ├── services/       # Service wrappers for interacting with APIs
+│   │   ├── services/       # Service wrappers for interacting with APIs (e.g. apiClient.js)
 │   │   ├── utils/          # Formatting and mathematical calculators
 │   │   ├── App.jsx         # Core app container & router
 │   │   ├── index.css       # Global styling overrides
 │   │   └── main.jsx        # App mounting configuration
+│   ├── Dockerfile          # Frontend compilation and containerization recipe
 │   ├── package.json
 │   └── vite.config.js
 │
-└── server/                 # Backend Node.js Express server
-    ├── config/             # DB pools and environment configuration
-    ├── controllers/        # Request handlers & application logic
-    ├── data/               # Mock data blueprints for database seeding
-    ├── db/                 # DB schema initialization DDL and seeding scripts
-    │   ├── schema.sql      # DDL database schema definitions
-    │   └── seed.js         # JavaScript seeder engine
-    ├── middleware/         # Security guards and error handlers
-    ├── routes/             # REST route mount mappings
-    ├── server.js           # Server application bootstrapper
-    └── package.json
+├── server/                 # Backend Node.js Express server
+│   ├── config/             # DB pools and environment configuration
+│   ├── controllers/        # Request handlers & application logic (e.g. aiController.js)
+│   ├── data/               # Mock data blueprints for database seeding
+│   ├── db/                 # DB schema initialization DDL and seeding scripts
+│   │   ├── schema.sql      # DDL database schema definitions
+│   │   └── seed.js         # JavaScript seeder engine
+│   ├── middleware/         # Security guards and error handlers
+│   ├── routes/             # REST route mount mappings (e.g. aiRoutes.js)
+│   ├── Dockerfile          # Backend environment containerization recipe
+│   ├── server.js           # Server application bootstrapper
+│   └── package.json
+│
+└── docker-compose.yml      # Root multi-container orchestration config
 ```
 
 ---
