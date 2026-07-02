@@ -161,6 +161,7 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
   const passGrade = exam.passGrade || 60;
   const isPassed = submission.score >= passGrade;
   const studentFirstLetter = submission.studentName ? submission.studentName.charAt(0).toUpperCase() : 'S';
+  const avatarContent = submission.studentAvatar && submission.studentAvatar !== 'initials' ? submission.studentAvatar : studentFirstLetter;
 
   return (
     <div className="grading-container">
@@ -317,7 +318,7 @@ const GradeSubmissionViewer = ({ submissionId, onBack }) => {
       <div className="card grading-header-card border-0 p-4">
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
           <div className="d-flex align-items-center gap-3 text-start">
-            <div className="grading-welcome-avatar">{studentFirstLetter}</div>
+            <div className="grading-welcome-avatar">{avatarContent}</div>
             <div>
               <h4 className="mb-0 fw-bold text-white">Grading: {exam.title}</h4>
               <p className="mb-0 small" style={{ color: '#a7f3d0' }}>
