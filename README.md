@@ -108,6 +108,8 @@ The relational schema is optimized with specific indexes for quick queries durin
 
 ![ERD](ERD.png)
 
+![ERD_PLUS](ERD_PLUS.png)
+
 ---
 
 * **`users`**: Stores user authentication credentials, names, roles (`student`, `teacher`), and theme/avatar preferences.
