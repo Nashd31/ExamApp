@@ -1,0 +1,562 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "teacher@test.com",
+      "password_hash": "$2b$10$T1ZkPm5T7QdDRMhycBp4zeICAt1QnE1GiAXQjEujLXR5lgN7z0aYq",
+      "name": "Test Teacher",
+      "role": "teacher",
+      "avatar": "initials",
+      "theme_color": "emerald"
+    },
+    {
+      "id": 2,
+      "email": "student@test.com",
+      "password_hash": "$2b$10$LxSVEHueFCJ4qnpo/43Tru8VHat9xYYMxZPVZcOoYLTWJozyXcyLu",
+      "name": "Test Student",
+      "role": "student",
+      "avatar": "initials",
+      "theme_color": "blue"
+    },
+    {
+      "id": 3,
+      "email": "john@test.com",
+      "password_hash": "$2b$10$pMRpG3J6GkdGYnJigODVkOvYKRLXJ45Ba2tJri1hkb.wyO9hL6Vga",
+      "name": "John Doe",
+      "role": "student",
+      "avatar": "initials",
+      "theme_color": "blue"
+    }
+  ],
+  "courses": [
+    {
+      "id": 1,
+      "name": "Web Development Essentials",
+      "code": "CS-101",
+      "teacher_id": 1
+    },
+    {
+      "id": 2,
+      "name": "Frontend Development with React",
+      "code": "CS-102",
+      "teacher_id": 1
+    },
+    {
+      "id": 3,
+      "name": "Backend Development with Node & Express",
+      "code": "CS-103",
+      "teacher_id": 1
+    }
+  ],
+  "user_courses": [
+    {
+      "student_id": 2,
+      "course_id": 1
+    },
+    {
+      "student_id": 2,
+      "course_id": 2
+    },
+    {
+      "student_id": 2,
+      "course_id": 3
+    },
+    {
+      "student_id": 3,
+      "course_id": 1
+    },
+    {
+      "student_id": 3,
+      "course_id": 2
+    },
+    {
+      "student_id": 3,
+      "course_id": 3
+    }
+  ],
+  "exams": [
+    {
+      "id": 1,
+      "title": "HTML & CSS Basics",
+      "course_id": 1,
+      "duration": 45,
+      "pass_grade": 60,
+      "start_date": "2026-05-01T10:00:00.000Z",
+      "end_date": "2026-05-01T12:00:00.000Z",
+      "are_grades_published": true,
+      "factor": 0,
+      "creator_id": 1
+    },
+    {
+      "id": 2,
+      "title": "React State Management",
+      "course_id": 2,
+      "duration": 90,
+      "pass_grade": 55,
+      "start_date": "2026-06-01T10:00:00.000Z",
+      "end_date": "2026-06-01T12:00:00.000Z",
+      "are_grades_published": false,
+      "factor": 0,
+      "creator_id": 1
+    },
+    {
+      "id": 3,
+      "title": "Node.js Core Concepts",
+      "course_id": 3,
+      "duration": 60,
+      "pass_grade": 50,
+      "start_date": "2026-07-01T10:00:00.000Z",
+      "end_date": "2026-07-01T12:00:00.000Z",
+      "are_grades_published": false,
+      "factor": 0,
+      "creator_id": 1
+    },
+    {
+      "id": 4,
+      "title": "JavaScript Fundamentals",
+      "course_id": 1,
+      "duration": 120,
+      "pass_grade": 60,
+      "start_date": "2026-07-01T00:00:00.000Z",
+      "end_date": "2026-07-02T23:59:59.000Z",
+      "are_grades_published": false,
+      "factor": 0,
+      "creator_id": 1
+    },
+    {
+      "id": 5,
+      "title": "Database Integration & SQL",
+      "course_id": 3,
+      "duration": 60,
+      "pass_grade": 70,
+      "start_date": "2026-08-01T10:00:00.000Z",
+      "end_date": "2026-08-01T12:00:00.000Z",
+      "are_grades_published": false,
+      "factor": 0,
+      "creator_id": 1
+    }
+  ],
+  "questions": [
+    {
+      "id": 1,
+      "exam_id": 1,
+      "text": "What does HTML stand for?",
+      "type": "multiple_choice",
+      "points": 33,
+      "options": [
+        "HyperText Markup Language",
+        "HighText Machine Language",
+        "HyperTabular Mail Link"
+      ],
+      "allowMultipleAnswers": false,
+      "correctAnswers": [
+        0
+      ]
+    },
+    {
+      "id": 2,
+      "exam_id": 1,
+      "text": "Which HTML tag is used to define an internal style sheet?",
+      "type": "multiple_choice",
+      "points": 33,
+      "options": [
+        "<css>",
+        "<script>",
+        "<style>"
+      ],
+      "allowMultipleAnswers": false,
+      "correctAnswers": [
+        2
+      ]
+    },
+    {
+      "id": 3,
+      "exam_id": 1,
+      "text": "Explain the difference between block and inline HTML elements.",
+      "type": "open_ended",
+      "points": 34,
+      "options": [],
+      "allowMultipleAnswers": false,
+      "correctAnswers": []
+    },
+    {
+      "id": 4,
+      "exam_id": 2,
+      "text": "What is a Hook in React?",
+      "type": "multiple_choice",
+      "points": 50,
+      "options": [
+        "A function that lets you hook into React state and lifecycle",
+        "A way to link external stylesheets",
+        "A HTML element selector"
+      ],
+      "allowMultipleAnswers": false,
+      "correctAnswers": [
+        0
+      ]
+    },
+    {
+      "id": 5,
+      "exam_id": 2,
+      "text": "Which hook is used to handle side effects in React?",
+      "type": "multiple_choice",
+      "points": 50,
+      "options": [
+        "useState",
+        "useEffect",
+        "useContext"
+      ],
+      "allowMultipleAnswers": false,
+      "correctAnswers": [
+        1
+      ]
+    },
+    {
+      "id": 6,
+      "exam_id": 3,
+      "text": "Which module is used to create a web server in Node?",
+      "type": "multiple_choice",
+      "points": 50,
+      "options": [
+        "http",
+        "fs",
+        "path"
+      ],
+      "allowMultipleAnswers": false,
+      "correctAnswers": [
+        0
+      ]
+    },
+    {
+      "id": 7,
+      "exam_id": 3,
+      "text": "What is the command to initialize a new npm package?",
+      "type": "multiple_choice",
+      "points": 50,
+      "options": [
+        "npm start",
+        "npm init",
+        "npm install"
+      ],
+      "allowMultipleAnswers": false,
+      "correctAnswers": [
+        1
+      ]
+    },
+    {
+      "id": 8,
+      "exam_id": 4,
+      "text": "Which of the following are valid variable declarations in JavaScript? (Select all that apply)",
+      "type": "multiple_choice",
+      "points": 30,
+      "options": [
+        "var",
+        "let",
+        "const",
+        "def"
+      ],
+      "allowMultipleAnswers": true,
+      "correctAnswers": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "id": 9,
+      "exam_id": 4,
+      "text": "What is the correct way to write a conditional block in JS?",
+      "type": "multiple_choice",
+      "points": 30,
+      "options": [
+        "if i = 5 then",
+        "if (i === 5)",
+        "if i == 5"
+      ],
+      "allowMultipleAnswers": false,
+      "correctAnswers": [
+        1
+      ]
+    },
+    {
+      "id": 10,
+      "exam_id": 4,
+      "text": "Explain what a closure is in JavaScript and provide a brief example.",
+      "type": "open_ended",
+      "points": 40,
+      "options": [],
+      "allowMultipleAnswers": false,
+      "correctAnswers": []
+    },
+    {
+      "id": 11,
+      "exam_id": 5,
+      "text": "What does SQL stand for?",
+      "type": "multiple_choice",
+      "points": 100,
+      "options": [
+        "Structured Query Language",
+        "Simple Queue List",
+        "System Query Link"
+      ],
+      "allowMultipleAnswers": false,
+      "correctAnswers": [
+        0
+      ]
+    }
+  ],
+  "options": [
+    {
+      "id": 1,
+      "question_id": 1,
+      "text": "HyperText Markup Language"
+    },
+    {
+      "id": 2,
+      "question_id": 1,
+      "text": "HighText Machine Language"
+    },
+    {
+      "id": 3,
+      "question_id": 1,
+      "text": "HyperTabular Mail Link"
+    },
+    {
+      "id": 4,
+      "question_id": 2,
+      "text": "<css>"
+    },
+    {
+      "id": 5,
+      "question_id": 2,
+      "text": "<script>"
+    },
+    {
+      "id": 6,
+      "question_id": 2,
+      "text": "<style>"
+    },
+    {
+      "id": 7,
+      "question_id": 4,
+      "text": "A function that lets you hook into React state and lifecycle"
+    },
+    {
+      "id": 8,
+      "question_id": 4,
+      "text": "A way to link external stylesheets"
+    },
+    {
+      "id": 9,
+      "question_id": 4,
+      "text": "A HTML element selector"
+    },
+    {
+      "id": 10,
+      "question_id": 5,
+      "text": "useState"
+    },
+    {
+      "id": 11,
+      "question_id": 5,
+      "text": "useEffect"
+    },
+    {
+      "id": 12,
+      "question_id": 5,
+      "text": "useContext"
+    },
+    {
+      "id": 13,
+      "question_id": 6,
+      "text": "http"
+    },
+    {
+      "id": 14,
+      "question_id": 6,
+      "text": "fs"
+    },
+    {
+      "id": 15,
+      "question_id": 6,
+      "text": "path"
+    },
+    {
+      "id": 16,
+      "question_id": 7,
+      "text": "npm start"
+    },
+    {
+      "id": 17,
+      "question_id": 7,
+      "text": "npm init"
+    },
+    {
+      "id": 18,
+      "question_id": 7,
+      "text": "npm install"
+    },
+    {
+      "id": 19,
+      "question_id": 8,
+      "text": "var"
+    },
+    {
+      "id": 20,
+      "question_id": 8,
+      "text": "let"
+    },
+    {
+      "id": 21,
+      "question_id": 8,
+      "text": "const"
+    },
+    {
+      "id": 22,
+      "question_id": 8,
+      "text": "def"
+    },
+    {
+      "id": 23,
+      "question_id": 9,
+      "text": "if i = 5 then"
+    },
+    {
+      "id": 24,
+      "question_id": 9,
+      "text": "if (i === 5)"
+    },
+    {
+      "id": 25,
+      "question_id": 9,
+      "text": "if i == 5"
+    },
+    {
+      "id": 26,
+      "question_id": 11,
+      "text": "Structured Query Language"
+    },
+    {
+      "id": 27,
+      "question_id": 11,
+      "text": "Simple Queue List"
+    },
+    {
+      "id": 28,
+      "question_id": 11,
+      "text": "System Query Link"
+    }
+  ],
+  "submissions": [
+    {
+      "id": 1,
+      "exam_id": 1,
+      "student_id": 2,
+      "score": 58,
+      "status": "graded",
+      "submitted_at": "2026-05-01T10:45:00.000Z"
+    },
+    {
+      "id": 2,
+      "exam_id": 1,
+      "student_id": 3,
+      "score": 100,
+      "status": "graded",
+      "submitted_at": "2026-05-01T11:15:00.000Z"
+    },
+    {
+      "id": 3,
+      "exam_id": 2,
+      "student_id": 2,
+      "score": 50,
+      "status": "submitted",
+      "submitted_at": "2026-06-01T11:00:00.000Z"
+    }
+  ],
+  "answers": [
+    {
+      "id": 1,
+      "submission_id": 1,
+      "question_id": 1,
+      "selected_options": [
+        0
+      ],
+      "text_response": null,
+      "manual_points": null,
+      "notes": null
+    },
+    {
+      "id": 2,
+      "submission_id": 1,
+      "question_id": 2,
+      "selected_options": [
+        1
+      ],
+      "text_response": null,
+      "manual_points": null,
+      "notes": null
+    },
+    {
+      "id": 3,
+      "submission_id": 1,
+      "question_id": 3,
+      "selected_options": null,
+      "text_response": "var is function-scoped while let and const are block-scoped.",
+      "manual_points": null,
+      "notes": null
+    },
+    {
+      "id": 4,
+      "submission_id": 2,
+      "question_id": 1,
+      "selected_options": [
+        0
+      ],
+      "text_response": null,
+      "manual_points": null,
+      "notes": null
+    },
+    {
+      "id": 5,
+      "submission_id": 2,
+      "question_id": 2,
+      "selected_options": [
+        2
+      ],
+      "text_response": null,
+      "manual_points": null,
+      "notes": null
+    },
+    {
+      "id": 6,
+      "submission_id": 2,
+      "question_id": 3,
+      "selected_options": null,
+      "text_response": "Block elements take up the full width, inline elements only take as much width as necessary.",
+      "manual_points": null,
+      "notes": null
+    },
+    {
+      "id": 7,
+      "submission_id": 3,
+      "question_id": 4,
+      "selected_options": [
+        0
+      ],
+      "text_response": null,
+      "manual_points": null,
+      "notes": null
+    },
+    {
+      "id": 8,
+      "submission_id": 3,
+      "question_id": 5,
+      "selected_options": [
+        0
+      ],
+      "text_response": null,
+      "manual_points": null,
+      "notes": null
+    }
+  ]
+}
