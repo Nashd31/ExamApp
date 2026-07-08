@@ -50,68 +50,100 @@ A robust, enterprise-grade Learning Management System (LMS) built to facilitate 
 
 ## 🏗 System Architecture
 
-The application adopts a decoupled client-server architecture. The React frontend interacts with the Node.js/Express backend through a secure RESTful API, with PostgreSQL acting as the central transactional database.
+The project implements a decoupled client-server architecture. The React frontend interacts with the Node.js/Express backend through a secure RESTful API, with PostgreSQL acting as the central database.
 
 ```mermaid
 graph TD
-    %% Client Side
-    subgraph Frontend [React Client - GitHub Pages / Local]
-        UI[User Interface]
-        AuthCtx[Auth Context]
-        APIClient[Fetch Client]
-        UI --> AuthCtx
-        AuthCtx --> APIClient
-    end
-
-    %% Network
-    APIClient -- "HTTPS / REST + JWT Bearer" --> Router
-
-    %% Server Side
-    subgraph Backend [Node.js Express Server - Render / Local]
-        Router[Express Routes]
-        AuthCtrl[Auth Controller]
-        CourseCtrl[Course Controller]
-        ExamCtrl[Exam Controller]
-        SubCtrl[Submission Controller]
-        AICtrl[AI Controller]
-        
-        Router --> AuthCtrl
-        Router --> CourseCtrl
-        Router --> ExamCtrl
-        Router --> SubCtrl
-        Router --> AICtrl
-    end
-
-    %% Database
-    subgraph Database [PostgreSQL - Managed / Local]
-        DB[(PostgreSQL Database)]
-    end
-
-    %% External Services
-    subgraph External [External Services]
-        Gemini[Gemini AI API]
-    end
-
-    AuthCtrl --> DB
-    CourseCtrl --> DB
-    ExamCtrl --> DB
-    SubCtrl --> DB
-    
-    AICtrl -- "HTTPS / API Key" --> Gemini
+    UI[React Client] -- "HTTPS with JSON and JWT Bearer" --> Router[Express Router]
+    Router --> AuthCtrl[Auth Controller] & CourseCtrl[Course Controller] & ExamCtrl[Exam Controller] & SubCtrl[Submission Controller] & AICtrl[AI Controller]
+    AuthCtrl & CourseCtrl & ExamCtrl & SubCtrl --> DB[(PostgreSQL Database)]
+    AICtrl -- "HTTPS via API Key" --> Gemini[Gemini AI API]
 ```
+
+### 📡 High-Level Architectural Flow
+* **Communication:** The frontend communicates with the server via stateless RESTful API routes using `JSON` payloads.
+* **Authentication:** Handled using **JSON Web Tokens (JWT)**. On login, the client receives a token and caches it in `localStorage` via `storage.js`. It is attached to all subsequent request headers as `Authorization: Bearer <JWT>`.
+* **Data Storage:** Persistent data is stored in PostgreSQL. If the offline mode is enabled (`USE_SERVER_API: false`), the frontend falls back to `mockDb.js` simulating database tables in `localStorage`.
+* **AI Service:** The client sends natural-language prompts to the backend. The backend resolves the request using Google's Gemini SDK (`@google/generative-ai`) and returns point-balanced exam objects.
 
 ---
 
-## 📊 Database Schema
+## 💻 Client-Side Architecture
 
-The relational schema is optimized with specific indexes for quick queries during exam taking and grading.
+The frontend is a single-page application built on Vite, React, and Bootstrap.
+
+```mermaid
+graph TD
+    App[App Component] --> Router[HashRouter]
+    Router --> Guards[ProtectedRoute & PublicRoute]
+    App --> Contexts[AuthProvider & DialogProvider]
+    Guards --> Pages[Dashboard & Portal & TakeExam Pages]
+    Pages --> Service[API Services: authService & examService]
+    Service --> Client[apiClient fetch wrapper] & Mock[mockDb localStorage fallback]
+```
+
+### 🌳 Component Hierarchy
+```
+main.jsx
+└── App.jsx
+    ├── HashRouter (Routing Engine)
+    ├── ScrollToTop
+    ├── AuthProvider (Auth State Context)
+    │   └── DialogProvider (Global Modal Context)
+    │       └── AppContent (Layout container)
+    │           ├── Navbar.jsx (Sticky Global Header)
+    │           │   └── SettingsModal.jsx (Avatar & Theme customization)
+    │           └── Main Workspace Pages (Inside Routes):
+    │               ├── Home.jsx (Static Landing Dashboard)
+    │               ├── PrivacyPolicy.jsx (Static Legal Document)
+    │               ├── TermsAndConditions.jsx (Static Legal Document)
+    │               ├── Auth.jsx (Unified Login / Registration Screen) [Guarded by PublicRoute]
+    │               ├── StudentPortal.jsx (Student Dashboard) [Guarded by ProtectedRoute]
+    │               ├── TakeExam.jsx (Timed Exam Workspace) [Guarded by ProtectedRoute]
+    │               └── TeacherDashboard.jsx (Teacher Management Suite) [Guarded by ProtectedRoute]
+    │                   ├── ExamEditor.jsx (Exam Creation with Gemini AI Assistant)
+    │                   ├── ExamScoresViewer.jsx (Student Grades List & Performance Charts)
+    │                   ├── GradeSubmissionViewer.jsx (Manual Grading & Feedback Workspace)
+    │                   ├── ExamAdjustment.jsx (Exam Timers / Passing Grades / Factors Adjuster)
+    │                   └── CustomDateTimePicker.jsx (Release & Expiration Validators)
+```
+
+### 🔑 Core Client Modules
+* `HashRouter`: Binds hash routing (`/#/path`) to bypass routing fallback errors on static page hosts like GitHub Pages.
+* `ProtectedRoute.jsx` & `PublicRoute.jsx`: Dynamic route guards implementing role authorization.
+* `AuthProvider`: Propagates active user data, profile/avatar modifiers, and the `applyTheme` module targeting CSS variables (`--theme-color`).
+* `DialogProvider`: imperative Promise-based alert/confirm dialog manager. Connects to the decoupled notification system in `notify.js` using browser custom DOM events.
+* **Dependencies:** Configured in `client/package.json` containing `react`, `react-dom`, `react-router-dom`, `bootstrap`. Dev dependencies include `vite`, `vitest`, `gh-pages`, `jsdom`, and `@testing-library/react`.
+
+---
+
+## 🖥 Server-Side Architecture
+
+The backend server is structured under the MVC (Model-View-Controller) design pattern.
+
+### 🗺 MVC Architecture Pattern
+The backend is designed following the **Model-View-Controller (MVC)** architectural design pattern:
+1. **Model:** Represented by the PostgreSQL relational database schema. Database structures and queries are run via SQL DDL transactions compiled through a centralized connection pool.
+2. **View:** Represented by the React client application. The server serves JSON data payloads, completely decoupling the server logic from the rendering pipeline.
+3. **Controller:** Represented by controller modules in the `server/controllers/` directory which handle input validation, authenticate scopes, run business processes, and respond to requests.
+
+### ⚙ Controller-Routing Execution Pipeline
+1. **Router:** Incoming API requests hit `server.js` and are mapped to routing folders (e.g. `server/routes/`).
+2. **Middleware:** Custom authorization middlewares (e.g. `authMiddleware.js`) parse headers to decode JWT tokens, block unauthorized access, and attach user metadata.
+3. **Controller:** The request is processed by controllers (e.g. `examController.js`) which interact with the database pool to serve dynamic JSON payloads back to the client.
+4. **Dependencies:** Configured in `server/package.json` including `express` (routing), `pg` (Postgres DB client), `jsonwebtoken` & `bcryptjs` (auth security), and `@google/generative-ai` (Gemini SDK). Dev tools include `nodemon`, `supertest`, and `vitest`.
+
+---
+
+## 📊 Database Schema & JSON Models
+
+The PostgreSQL tables are configured as follows:
 
 ![ERD](ERD.png)
 
 ![ERD_PLUS](ERD_PLUS.png)
 
----
-
+### 🗃 Table Definitions & Core JSON Schemas
 * **`users`**: Stores user authentication credentials, names, roles (`student`, `teacher`), and theme/avatar preferences.
 * **`courses`**: Tracks academic courses managed by teachers.
 * **`user_courses`**: Junction table mapping enrolled students to their respective courses.
@@ -120,6 +152,180 @@ The relational schema is optimized with specific indexes for quick queries durin
 * **`options`**: Enumerates options for multiple-choice questions.
 * **`submissions`**: Tracks individual student exam sittings, total scored points, and grading statuses (`submitted` or `graded`).
 * **`answers`**: Stores the student's selected options or text responses, along with teacher grades/notes.
+
+```json
+{
+  "User": { "id": 1, "email": "a@a.com", "name": "Alice", "role": "student", "themeColor": "indigo" },
+  "Course": { "id": 10, "name": "Web", "code": "CS-101", "teacherId": 1 },
+  "Exam": {
+    "id": 20, "title": "JS Closure", "courseId": 10, "duration": 45, "passGrade": 60,
+    "questions": [
+      { "id": 100, "text": "What is a closure?", "type": "multiple_choice", "points": 100,
+        "options": [{ "id": 1, "text": "Scope binding" }], "correctAnswers": [1] }
+    ]
+  },
+  "Submission": {
+    "id": 5, "examId": 20, "studentId": 1, "studentName": "Alice", "status": "submitted", "score": null,
+    "answers": [{ "questionId": 100, "selectedOptions": [1], "textAnswer": null, "points": 100, "notes": "Correct" }]
+  }
+}
+```
+
+---
+
+## 🗺 OOP Conceptual UML Class Diagram
+
+This diagram displays the object model structure mapping frontend states and backend database records:
+
+```mermaid
+classDiagram
+    class User {
+        +int id
+        +string name
+        +string email
+        +string role
+        +string avatar
+        +string themeColor
+        +login(email, password)
+        +updateProfile(name, theme, avatar)
+    }
+
+    class Course {
+        +int id
+        +string name
+        +string code
+        +int teacherId
+        +enrollStudent(studentId)
+        +unenrollStudent(studentId)
+    }
+
+    class Exam {
+        +int id
+        +string title
+        +int courseId
+        +int duration
+        +int passGrade
+        +DateTime startDate
+        +DateTime endDate
+        +bool areGradesPublished
+        +Question[] questions
+        +publish()
+        +adjust(adjustments)
+    }
+
+    class Question {
+        +int id
+        +string text
+        +string type
+        +int points
+        +bool allowMultipleAnswers
+        +Option[] options
+        +int[] correctAnswers
+    }
+
+    class Option {
+        +int id
+        +string text
+    }
+
+    class Submission {
+        +int id
+        +int examId
+        +int studentId
+        +string studentName
+        +string status
+        +int score
+        +DateTime submittedAt
+        +Answer[] answers
+        +calculateAutoGrade()
+        +submitFeedback()
+    }
+
+    class Answer {
+        +int questionId
+        +int[] selectedOptions
+        +string textAnswer
+        +int points
+        +string notes
+    }
+
+    class AuthService {
+        +login(email, password)
+        +register(name, email, password, role)
+        +updateProfile(id, name, pass, avatar, theme)
+    }
+
+    class ExamService {
+        +getAllExams(teacherId)
+        +getExamById(id)
+        +createExam(exam)
+        +submitExam(examId, name, answers)
+        +gradeSubmission(subId, qId, points, notes)
+    }
+
+    class GeminiAIService {
+        +generateExamFromPrompt(promptText)
+    }
+    
+    User "1" --> "*" Course : enrolled / teaches
+    Course "1" --> "*" Exam : contains
+    Exam "1" --> "*" Question : has
+    Question "1" --> "*" Option : has
+    User "1" --> "*" Submission : submits
+    Submission "1" --> "*" Answer : contains
+    Submission "*" <-- "1" Exam : belongs to
+    
+    AuthService ..> User : manages
+    ExamService ..> Exam : manages
+    ExamService ..> Submission : evaluates
+    GeminiAIService ..> Exam : generates
+```
+
+---
+
+## 🔄 Core Scenarios & Sequence Flows
+
+### 1. Student Exam Submission (Auto & Manual grading resolution)
+Shows the data flow when a student submits an exam, triggering automated grading for multiple-choice questions while leaving open-ended questions flagged for manual review:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Student
+    participant UI as TakeExam (UI)
+    participant Client as apiClient
+    participant Controller as Submission Controller
+    participant DB as PostgreSQL
+    
+    Student->>UI: Fills answers & clicks Submit
+    UI->>Client: submitExam(examId, name, answers)
+    Client->>Controller: POST submissions endpoint (Attaches JWT)
+    Controller->>DB: Query correct answer values
+    Note over Controller: Scores multiple-choice questions automatically.<br/>Essay questions remain un-evaluated (score=NULL).
+    Controller->>DB: INSERT submission & answer records
+    Controller-->>Client: 201 Created (Returns computed auto-score)
+    Client-->>UI: Display results / pending status
+```
+
+### 2. Teacher AI Exam Generation (Gemini AI Flow)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Teacher
+    participant UI as ExamEditor (UI)
+    participant Client as apiClient
+    participant Controller as AI Controller
+    participant Gemini as Gemini API
+    
+    Teacher->>UI: Enters prompt details & clicks Generate
+    UI->>Client: generateExamFromAI(promptText)
+    Client->>Controller: POST generate-exam endpoint
+    Note over Controller: Appends strict JSON schema constraints<br/>and scales point distribution to sum to 100.
+    Controller->>Gemini: POST request (Generative Model + API Key)
+    Gemini-->>Controller: Raw JSON response
+    Controller-->>Client: 200 OK (Validated JSON payload)
+    Client-->>UI: Loads questions & choices into Exam Composer Form
+```
 
 ---
 
@@ -167,6 +373,35 @@ The relational schema is optimized with specific indexes for quick queries durin
 | Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/ai/generate-exam` | Private (Teacher) | Generates complete exam questions from natural language prompts using Gemini AI |
+
+---
+
+## 🌿 Version Control & Semester Milestones
+
+### 🎋 Git Branch Architecture
+* **`main`**: Stable production release branch. Triggers GitHub Actions build/deploy.
+* **`dev`**: Main integration pipeline where new features are consolidated.
+* **`gh-pages`**: Holds compile distribution builds served directly to users.
+
+### 🏁 Semester Milestones
+1. **Repository Setup:** Creating the GitHub repository and initializing the project structure.
+2. **Frontend Development:** Creating the React client application on Vite, establishing routing, layouts, and page flows.
+3. **Backend Development:** Creating the Node.js/Express API server, configuring routing, and implementing JWT token security.
+4. **Database Integration:** Creating the PostgreSQL database, designing tables schemas, and setting up the seeder engine.
+5. **CI/CD Configuration:** Creating the automated CI/CD workflows via GitHub Actions to build and deploy compiled frontend assets.
+6. **Gemini AI Integration:** Adding the Google Gemini AI API integration to dynamically compose structured and point-balanced exams.
+7. **Containerization:** Docker implementation configuring Dockerfiles for client/server and orchestrating via docker-compose.
+8. **Automated Testing:** Adding the unit and integration test suites for client and server using Vitest.
+
+---
+
+## ⚙ DevOps: Docker, Testing & Logs
+
+* **Docker:** Structured using multi-stage client builds serving through Nginx (`client/Dockerfile`), Node.js alpine configurations (`server/Dockerfile`), and integrated orchestration using `docker-compose.yml` mapping PostgreSQL 17 database port.
+* **Testing:** Both client and server suites use `vitest` testing.
+  - Client component tests (`ExamEditor.test.jsx`) are executed via `cd client && npm run test`.
+  - Server endpoints tests (`auth.test.js`) are executed via `cd server && npm test`.
+* **Logging System:** Operates on the client via `logger.js` mapping environment levels, and on the server using timestamped request auditing middleware (`[Time] METHOD URL`) in `server.js`.
 
 ---
 
