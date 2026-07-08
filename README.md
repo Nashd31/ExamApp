@@ -74,13 +74,13 @@ The frontend is a single-page application built on Vite, React, and Bootstrap.
 
 ```mermaid
 graph TD
-    App[App Component] --> Router[HashRouter]
-    App --> Contexts[AuthProvider and DialogProvider]
-    Router --> Guards[ProtectedRoute and PublicRoute]
-    Guards --> Pages[Dashboard, Portal, and TakeExam Pages]
-    Pages --> Service[API Services: authService and examService]
-    Service --> Client[apiClient fetch wrapper]
-    Service --> Mock[mockDb localStorage fallback]
+    App["App Component"] --> Router["HashRouter"]
+    App --> Contexts["AuthProvider and<br/>DialogProvider"]
+    Router --> Guards["ProtectedRoute and<br/>PublicRoute"]
+    Guards --> Pages["Dashboard, Portal, and<br/>TakeExam Pages"]
+    Pages --> Service["API Services:<br/>authService and examService"]
+    Service --> Client["apiClient fetch wrapper"]
+    Service --> Mock["mockDb Local<br/>Storage Fallback"]
 ```
 
 ### 🌳 Component Hierarchy
