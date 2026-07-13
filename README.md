@@ -54,7 +54,7 @@ The project implements a decoupled client-server architecture. The React fronten
 
 ```mermaid
 graph TD
-    UI[React Client] -- "HTTPS with JSON and JWT Bearer" --> Router[Express Router]
+    UI[React Client] -- "HTTPS with JSON and<br/>JWT Bearer" --> Router[Express Router]
     Router --> AuthCtrl[Auth Controller] & CourseCtrl[Course Controller] & ExamCtrl[Exam Controller] & SubCtrl[Submission Controller] & AICtrl[AI Controller]
     AuthCtrl & CourseCtrl & ExamCtrl & SubCtrl --> DB[(PostgreSQL Database)]
     AICtrl -- "HTTPS via API Key" --> Gemini[Gemini AI API]
