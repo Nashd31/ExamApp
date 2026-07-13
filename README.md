@@ -384,6 +384,8 @@ sequenceDiagram
 * **`dev`**: Main integration pipeline where new features are consolidated.
 * **`gh-pages`**: Holds compile distribution builds served directly to users.
 
+![GitTree](GitTree.png)
+
 ### 🏁 Semester Milestones
 1. **Repository Setup:** Creating the GitHub repository and initializing the project structure.
 2. **Frontend Development:** Creating the React client application on Vite, establishing routing, layouts, and page flows.
