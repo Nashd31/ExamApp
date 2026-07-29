@@ -19,9 +19,11 @@ const generateExam = async (req, res, next) => {
       });
     }
 
+    const aiModel = process.env.GEMINI_API_MODEL || 'gemini-3.5-flash';
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash',
+      model: aiModel,
       systemInstruction: "You are an expert exam creator. The user will ask you to generate questions. You MUST return ONLY valid JSON. The JSON must strictly be an ARRAY of question objects. Each object must follow this exact format: { text: 'Question text', type: 'multiple_choice' or 'open_ended', points: integer, options: ['opt1', 'opt2', 'opt3', 'opt4'] (only if multiple_choice), correctAnswers: [integer_array_of_correct_indexes] (only if multiple_choice) }. Distribute exactly 100 points across the generated questions."
     });
 
