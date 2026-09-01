@@ -69,6 +69,10 @@ export const apiFetch = async (endpoint, options = {}) => {
 
 
 export const generateExamFromAI = async (promptText) => {
+  if (!config.USE_SERVER_API) {
+    throw new Error('This service is not available now.');
+  }
+
   return await apiFetch('/ai/generate-exam', {
     method: 'POST',
     body: { promptText }
