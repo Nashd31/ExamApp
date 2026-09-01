@@ -14,7 +14,6 @@ A robust, enterprise-grade Learning Management System (LMS) built to facilitate 
 ## 🌐 Live Deployments
 
 - [Github Pages Deployment](https://nashd31.github.io/ExamApp/)
-- [Render Deployment](https://examapp-2k27.onrender.com)
 
 ---
 

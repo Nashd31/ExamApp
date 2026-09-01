@@ -13,7 +13,7 @@ const config = {
     STORAGE_PREFIX: 'examApp_',
     API_TIMEOUT: 5000,
     MAX_RETRIES: 3,
-    USE_SERVER_API: true,
+    USE_SERVER_API: import.meta.env.VITE_USE_SERVER_API === 'true',
     API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 
                   (isLocal ? 'http://localhost:5000/api' : 'https://examappserver.onrender.com/api'),
 };
