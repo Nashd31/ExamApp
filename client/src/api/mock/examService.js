@@ -10,9 +10,21 @@ export const getAllExams = async (teacherId) => {
   await delay();
   let exams = [...mockDb.exams];
   if (teacherId) {
-    exams = exams.filter(e => e.creatorId === Number(teacherId) || e.teacherId === Number(teacherId));
+    const tId = Number(teacherId);
+    const teacherCourses = (mockDb.courses || [])
+      .filter(c => Number(c.teacherId) === tId)
+      .map(c => Number(c.id));
+
+    exams = exams.filter(e => 
+      Number(e.creatorId) === tId || 
+      Number(e.teacherId) === tId || 
+      teacherCourses.includes(Number(e.courseId))
+    );
   }
-  return exams;
+  return exams.map(e => ({
+    ...e,
+    submissionCount: (mockDb.submissions || []).filter(s => Number(s.examId) === Number(e.id)).length
+  }));
 };
 
 /**
@@ -52,6 +64,9 @@ export const createExam = async (exam) => {
   const newExam = {
     ...exam,
     id: newExamId,
+    courseId: Number(exam.courseId),
+    creatorId: Number(exam.creatorId || exam.teacherId || 1),
+    teacherId: Number(exam.teacherId || exam.creatorId || 1),
     duration: Number(exam.duration) || 60,
     passGrade: Number(exam.passGrade) || 50,
     factor: Number(exam.factor) || 0,
